@@ -1,0 +1,269 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --border: #e5e5ea;
+  --text: #1d1d1f;
+  --muted: #86868b;
+  --red: #ff2d55;
+  --cyan: #0a84ff;
+  --green: #30d158;
+  --amber: #ff9f0a;
+  --purple: #bf5af2;
+  --pink: #ff375f;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+.dark {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --card: #1a1a2e;
+  --border: #2a2a3e;
+  --text: #e8e8ed;
+  --muted: #8e8e93;
+  --red: #ff2d55;
+  --cyan: #00f0ff;
+  --green: #39ff14;
+  --amber: #ffb800;
+  --purple: #bf5af2;
+  --pink: #ff375f;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) var(--bg);
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  ::selection {
+    background: rgba(255, 45, 85, 0.3);
+    color: #fff;
+  }
+
+  input, textarea, select {
+    @apply rounded-xl px-4 py-2.5 transition-all duration-200;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--muted);
+  }
+
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 15%, transparent);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply relative px-6 py-2.5 text-white font-semibold rounded-xl
+           active:scale-[0.97] transition-all duration-200 overflow-hidden;
+    background: linear-gradient(135deg, var(--red), var(--pink));
+    box-shadow: 0 2px 12px color-mix(in srgb, var(--red) 30%, transparent);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--red) 40%, transparent);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0) scale(0.97);
+  }
+
+  .btn-primary span {
+    @apply relative z-10;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-2.5 font-medium rounded-xl
+           active:scale-[0.97] transition-all duration-200;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 rounded-xl transition-all duration-200;
+    color: var(--muted);
+  }
+
+  .btn-ghost:hover {
+    color: var(--text);
+    background: var(--surface);
+  }
+
+  .card {
+    @apply rounded-2xl p-6 transition-all duration-300;
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  .card-hover {
+    @apply card cursor-pointer;
+  }
+
+  .card-hover:hover {
+    box-shadow: var(--shadow-lg);
+    border-color: color-mix(in srgb, var(--cyan) 40%, var(--border));
+    transform: translateY(-2px);
+  }
+
+  .glass {
+    @apply rounded-2xl;
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  }
+
+  .live-dot {
+    @apply relative inline-flex h-3 w-3;
+  }
+
+  .live-dot::before {
+    content: "";
+    @apply absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping;
+    background: var(--red);
+  }
+
+  .live-dot::after {
+    content: "";
+    @apply relative inline-flex h-3 w-3 rounded-full;
+    background: var(--red);
+  }
+
+  .neon-text {
+    text-shadow: 0 0 10px color-mix(in srgb, var(--cyan) 50%, transparent),
+                 0 0 40px color-mix(in srgb, var(--cyan) 20%, transparent);
+  }
+
+  .neon-red {
+    text-shadow: 0 0 10px color-mix(in srgb, var(--red) 50%, transparent),
+                 0 0 40px color-mix(in srgb, var(--red) 20%, transparent);
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, var(--red), var(--purple), var(--cyan));
+  }
+
+  .stat-value {
+    @apply text-3xl font-bold font-display tracking-tight;
+  }
+
+  .stat-label {
+    @apply text-sm font-medium uppercase tracking-wider;
+    color: var(--muted);
+  }
+
+  .theme-bg { background: var(--bg); }
+  .theme-surface { background: var(--surface); }
+  .theme-card { background: var(--card); }
+  .theme-border { border-color: var(--border); }
+  .theme-text { color: var(--text); }
+  .theme-muted { color: var(--muted); }
+  .theme-red { color: var(--red); }
+  .theme-cyan { color: var(--cyan); }
+  .theme-green { color: var(--green); }
+  .theme-amber { color: var(--amber); }
+  .theme-purple { color: var(--purple); }
+
+  .onair-badge {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider;
+    background: color-mix(in srgb, var(--red) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--red) 20%, transparent);
+    color: var(--red);
+  }
+
+  .progress-bar {
+    @apply h-2 rounded-full overflow-hidden;
+    background: var(--surface);
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--surface) 25%,
+      color-mix(in srgb, var(--border) 50%, var(--surface)) 50%,
+      var(--surface) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+}
+
+@layer utilities {
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    0% { box-shadow: 0 0 5px color-mix(in srgb, var(--red) 30%, transparent), 0 0 20px color-mix(in srgb, var(--red) 10%, transparent); }
+    100% { box-shadow: 0 0 10px color-mix(in srgb, var(--red) 50%, transparent), 0 0 40px color-mix(in srgb, var(--red) 20%, transparent); }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  @keyframes slideUp {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+}

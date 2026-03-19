@@ -1,0 +1,219 @@
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
+import { Heart, MessageCircle, Plus, Send, Dumbbell, Trophy, TrendingUp } from "lucide-react";
+import api from "@/lib/api";
+import toast from "react-hot-toast";
+import { formatDateTime } from "@/lib/utils";
+
+interface Post {
+  id: string;
+  post_type: string;
+  content: string;
+  image_url: string | null;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+  author: { id: string; first_name: string; last_name: string; avatar_url: string | null } | null;
+  liked_by_me: boolean;
+}
+
+const typeIcons: Record<string, any> = {
+  workout: Dumbbell,
+  pr: Trophy,
+  progress: TrendingUp,
+  general: MessageCircle,
+};
+
+export default function Community() {
+  const { t } = useTranslation();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [showNewPost, setShowNewPost] = useState(false);
+  const [newPost, setNewPost] = useState({ post_type: "general", content: "" });
+  const [commentPost, setCommentPost] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState<any[]>([]);
+
+  const fetchPosts = () => {
+    api.get("/community/feed").then((r) => setPosts(r.data)).catch(() => {});
+  };
+
+  useEffect(fetchPosts, []);
+
+  const handleCreatePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPost.content.trim()) return;
+    try {
+      await api.post("/community/posts", newPost);
+      toast.success(t("common.success"));
+      setShowNewPost(false);
+      setNewPost({ post_type: "general", content: "" });
+      fetchPosts();
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
+
+  const toggleLike = async (postId: string) => {
+    try {
+      await api.post(`/community/posts/${postId}/like`);
+      fetchPosts();
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
+
+  const openComments = async (postId: string) => {
+    setCommentPost(postId);
+    try {
+      const { data } = await api.get(`/community/posts/${postId}/comments`);
+      setComments(data);
+    } catch {
+      setComments([]);
+    }
+  };
+
+  const submitComment = async () => {
+    if (!commentPost || !commentText.trim()) return;
+    try {
+      await api.post(`/community/posts/${commentPost}/comments`, { content: commentText });
+      setCommentText("");
+      openComments(commentPost);
+      fetchPosts();
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-display font-bold">{t("community.title")}</h1>
+        <button onClick={() => setShowNewPost(true)} className="btn-primary flex items-center gap-2">
+          <Plus className="w-4 h-4" /> <span>{t("community.newPost")}</span>
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {posts.length === 0 ? (
+          <div className="card text-center py-12 text-onair-muted">
+            <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-30" />
+            <p>{t("common.noData")}</p>
+          </div>
+        ) : (
+          posts.map((post, i) => {
+            const TypeIcon = typeIcons[post.post_type] || MessageCircle;
+            return (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="card"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-onair-surface flex items-center justify-center text-sm font-bold text-onair-cyan border border-onair-cyan/30">
+                    {post.author?.first_name?.[0] || "?"}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">
+                      {post.author ? `${post.author.first_name} ${post.author.last_name}` : "Anonyme"}
+                    </p>
+                    <p className="text-xs text-onair-muted">{formatDateTime(post.created_at)}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-onair-surface text-xs">
+                    <TypeIcon className="w-3 h-3" />
+                    {t(`community.postTypes.${post.post_type}` as any)}
+                  </div>
+                </div>
+
+                <p className="text-sm leading-relaxed mb-4">{post.content}</p>
+
+                <div className="flex items-center gap-4 pt-3 border-t border-onair-border">
+                  <button
+                    onClick={() => toggleLike(post.id)}
+                    className={`flex items-center gap-1.5 text-sm transition-colors ${
+                      post.liked_by_me ? "text-onair-red" : "text-onair-muted hover:text-onair-red"
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 ${post.liked_by_me ? "fill-current" : ""}`} />
+                    {post.likes_count}
+                  </button>
+                  <button
+                    onClick={() => openComments(post.id)}
+                    className="flex items-center gap-1.5 text-sm text-onair-muted hover:text-onair-cyan transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    {post.comments_count}
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })
+        )}
+      </div>
+
+      {/* New Post Modal */}
+      {showNewPost && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.form initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} onSubmit={handleCreatePost} className="card w-full max-w-md">
+            <h2 className="text-lg font-display font-bold mb-4">{t("community.newPost")}</h2>
+            <select value={newPost.post_type} onChange={(e) => setNewPost({ ...newPost, post_type: e.target.value })} className="w-full mb-3">
+              {["general", "workout", "pr", "progress", "program"].map((type) => (
+                <option key={type} value={type}>{t(`community.postTypes.${type}` as any)}</option>
+              ))}
+            </select>
+            <textarea
+              value={newPost.content}
+              onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+              placeholder="Quoi de neuf ?"
+              rows={4}
+              required
+              className="w-full"
+            />
+            <div className="flex gap-3 mt-4">
+              <button type="button" onClick={() => setShowNewPost(false)} className="btn-secondary flex-1">{t("common.cancel")}</button>
+              <button type="submit" className="btn-primary flex-1"><span>Publier</span></button>
+            </div>
+          </motion.form>
+        </div>
+      )}
+
+      {/* Comments Modal */}
+      {commentPost && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card w-full max-w-md max-h-[70vh] flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-display font-bold">{t("community.comment")}</h2>
+              <button onClick={() => setCommentPost(null)} className="btn-ghost text-sm">{t("common.cancel")}</button>
+            </div>
+            <div className="flex-1 overflow-auto space-y-3 mb-4">
+              {comments.map((c: any) => (
+                <div key={c.id} className="p-3 bg-onair-surface rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium">{c.author?.first_name || "?"}</span>
+                    <span className="text-xs text-onair-muted">{formatDateTime(c.created_at)}</span>
+                  </div>
+                  <p className="text-sm">{c.content}</p>
+                </div>
+              ))}
+              {comments.length === 0 && <p className="text-center text-onair-muted py-4">{t("common.noData")}</p>}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder={t("community.writeComment")}
+                className="flex-1"
+                onKeyDown={(e) => e.key === "Enter" && submitComment()}
+              />
+              <button onClick={submitComment} className="btn-primary p-2.5">
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
+}

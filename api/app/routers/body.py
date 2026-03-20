@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
 from app.config import settings
+from app.utils.image import validate_image
 from app.database import get_db
 from app.models.body import BodyMeasurement, ProgressPhoto
 from app.models.user import User
@@ -135,23 +136,17 @@ async def upload_progress_photo(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if file.content_type not in ("image/jpeg", "image/png", "image/webp"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only JPEG, PNG, and WebP images allowed")
-
     contents = await file.read()
     max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
-    if len(contents) > max_bytes:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"File too large (max {settings.MAX_UPLOAD_SIZE_MB}MB)")
+    img, ext = validate_image(contents, max_bytes)  # Vérifie le contenu réel, pas juste le Content-Type
 
     photo_dir = os.path.join(settings.UPLOAD_DIR, "progress")
     os.makedirs(photo_dir, exist_ok=True)
 
-    ext = file.filename.rsplit(".", 1)[-1] if file.filename and "." in file.filename else "jpg"
     filename = f"{current_user.id}_{uuid_mod.uuid4().hex[:8]}.{ext}"
     filepath = os.path.join(photo_dir, filename)
 
-    with open(filepath, "wb") as f:
-        f.write(contents)
+    img.save(filepath)
 
     photo = ProgressPhoto(
         user_id=current_user.id,

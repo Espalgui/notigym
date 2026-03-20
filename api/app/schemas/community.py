@@ -1,14 +1,15 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.user import UserProfile
 
 
 class PostCreate(BaseModel):
-    post_type: str
-    content: str
+    post_type: Literal["general", "workout", "pr", "progress"]
+    content: str = Field(min_length=1, max_length=5000)
     reference_id: uuid.UUID | None = None
     image_url: str | None = None
 
@@ -31,7 +32,7 @@ class PostResponse(BaseModel):
 
 
 class CommentCreate(BaseModel):
-    content: str
+    content: str = Field(min_length=1, max_length=1000)
 
 
 class CommentResponse(BaseModel):

@@ -3,7 +3,6 @@ import uuid as uuid_mod
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
-from PIL import Image
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +14,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.security import DeleteAccount, PasswordChange
 from app.schemas.user import UserProfile, UserResponse, UserUpdate
+from app.utils.image import validate_image
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -47,30 +47,18 @@ async def upload_avatar(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if file.content_type not in ("image/jpeg", "image/png", "image/webp"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only JPEG, PNG, and WebP images allowed")
-
     contents = await file.read()
     max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
-    if len(contents) > max_bytes:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"File too large (max {settings.MAX_UPLOAD_SIZE_MB}MB)")
+    img, ext = validate_image(contents, max_bytes)  # Vérifie le contenu réel, pas juste le Content-Type
 
     avatar_dir = os.path.join(settings.UPLOAD_DIR, "avatars")
     os.makedirs(avatar_dir, exist_ok=True)
 
-    ext = file.filename.rsplit(".", 1)[-1] if file.filename and "." in file.filename else "jpg"
     filename = f"{current_user.id}_{uuid_mod.uuid4().hex[:8]}.{ext}"
     filepath = os.path.join(avatar_dir, filename)
 
-    with open(filepath, "wb") as f:
-        f.write(contents)
-
-    try:
-        img = Image.open(filepath)
-        img.thumbnail((400, 400))
-        img.save(filepath)
-    except Exception:
-        pass
+    img.thumbnail((400, 400))
+    img.save(filepath)
 
     current_user.avatar_url = f"/uploads/avatars/{filename}"
     current_user.updated_at = datetime.now(timezone.utc)
@@ -119,6 +107,7 @@ async def delete_account(
 @router.get("/{user_id}", response_model=UserProfile)
 async def get_user_profile(
     user_id: uuid_mod.UUID,
+    current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(User).where(User.id == user_id))

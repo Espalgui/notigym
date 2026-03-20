@@ -43,13 +43,11 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
           {
-            // API calls — network first, avec cookies, sans cacher les endpoints auth
-            urlPattern: ({ url }) =>
-              /\/api\//.test(url.pathname) && !/\/api\/auth\//.test(url.pathname),
+            // API calls — network first, fallback cache 10s
+            urlPattern: /^https?:\/\/.*\/api\/.*/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "api-cache",
-              fetchOptions: { credentials: "include" },
               networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 100,

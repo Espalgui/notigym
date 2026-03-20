@@ -13,12 +13,19 @@ export function InstallPWA() {
   );
 
   useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setPrompt(e as BeforeInstallPromptEvent);
+    // Récupérer le prompt capturé avant le montage de React
+    if ((window as any).__pwaInstallPrompt) {
+      setPrompt((window as any).__pwaInstallPrompt);
+    }
+
+    // Au cas où il arriverait après le montage
+    const handler = () => {
+      if ((window as any).__pwaInstallPrompt) {
+        setPrompt((window as any).__pwaInstallPrompt);
+      }
     };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    window.addEventListener("pwa-install-ready", handler);
+    return () => window.removeEventListener("pwa-install-ready", handler);
   }, []);
 
   if (!prompt || dismissed) return null;
@@ -28,6 +35,7 @@ export function InstallPWA() {
     const { outcome } = await prompt.userChoice;
     if (outcome === "accepted" || outcome === "dismissed") {
       setPrompt(null);
+      (window as any).__pwaInstallPrompt = null;
     }
   };
 

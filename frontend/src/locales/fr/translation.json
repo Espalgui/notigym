@@ -190,6 +190,8 @@
     "comment": "Commenter",
     "share": "Partager",
     "writeComment": "Écrire un commentaire...",
+    "deleteConfirm": "Supprimer ce post ?",
+    "deleted": "Post supprimé",
     "postTypes": {
       "workout": "Entraînement",
       "pr": "Record personnel",

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Plus, Send, Dumbbell, Trophy, TrendingUp, X } from "lucide-react";
+import { Heart, MessageCircle, Plus, Send, Dumbbell, Trophy, TrendingUp, X, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { formatDateTime } from "@/lib/utils";
+import { useAuthStore } from "@/stores/authStore";
 
 interface Post {
   id: string;
@@ -27,6 +28,7 @@ const typeIcons: Record<string, any> = {
 
 export default function Community() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [showNewPost, setShowNewPost] = useState(false);
   const [newPost, setNewPost] = useState({ post_type: "general", content: "" });
@@ -70,6 +72,17 @@ export default function Community() {
       setComments(data);
     } catch {
       setComments([]);
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm(t("community.deleteConfirm"))) return;
+    try {
+      await api.delete(`/community/posts/${postId}`);
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      toast.success(t("community.deleted"));
+    } catch {
+      toast.error(t("common.error"));
     }
   };
 
@@ -121,9 +134,19 @@ export default function Community() {
                     </p>
                     <p className="text-xs text-onair-muted">{formatDateTime(post.created_at)}</p>
                   </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-onair-surface text-xs">
-                    <TypeIcon className="w-3 h-3" />
-                    {t(`community.postTypes.${post.post_type}` as any)}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-onair-surface text-xs">
+                      <TypeIcon className="w-3 h-3" />
+                      {t(`community.postTypes.${post.post_type}` as any)}
+                    </div>
+                    {user?.id === post.author?.id && (
+                      <button
+                        onClick={() => handleDeletePost(post.id)}
+                        className="p-1.5 rounded-lg text-onair-muted hover:text-onair-red hover:bg-onair-red/10 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

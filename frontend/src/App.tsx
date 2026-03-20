@@ -33,6 +33,20 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, user } = useAuthStore();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="live-dot scale-150" />
+      </div>
+    );
+  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!user?.is_admin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   const { fetchUser } = useAuthStore();
   const { theme } = useThemeStore();
@@ -84,7 +98,7 @@ export default function App() {
           <Route path="nutrition" element={<Nutrition />} />
           <Route path="community" element={<Community />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="admin" element={<Admin />} />
+          <Route path="admin" element={<AdminRoute><Admin /></AdminRoute>} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

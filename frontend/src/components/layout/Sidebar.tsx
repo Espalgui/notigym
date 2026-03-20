@@ -44,7 +44,7 @@ const navItems = [
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { t } = useTranslation();
   const { logout, user } = useAuthStore();
-  const isAdmin = user?.is_admin ?? false;
+  const isAdmin = (user?.is_admin ?? false) && user?.email === "guillaume@cyberdev-it.com";
   const { theme, toggle } = useThemeStore();
   const { canInstall, install } = usePWAInstall();
   const navigate = useNavigate();

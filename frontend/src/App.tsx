@@ -33,6 +33,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+const ADMIN_EMAIL = "guillaume@cyberdev-it.com";
+
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuthStore();
   if (isLoading) {
@@ -42,8 +44,9 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!user?.is_admin) return <Navigate to="/" replace />;
+  if (!isAuthenticated || !user?.is_admin || user.email !== ADMIN_EMAIL) {
+    return <Navigate to="/" replace />;
+  }
   return <>{children}</>;
 }
 

@@ -45,7 +45,16 @@ interface Summary {
   days_recorded: number;
 }
 
-const fields = [
+interface FieldDef {
+  key: string;
+  field?: string;
+  icon: React.FC<{ className?: string }>;
+  type: "int" | "float";
+  color: string;
+  suffix?: string;
+}
+
+const fields: FieldDef[] = [
   { key: "steps", icon: Footprints, type: "int", color: "text-blue-400" },
   { key: "activeCalories", field: "active_calories", icon: Flame, type: "int", color: "text-orange-400" },
   { key: "totalCalories", field: "total_calories", icon: Flame, type: "int", color: "text-red-400" },
@@ -54,7 +63,7 @@ const fields = [
   { key: "activeMinutes", field: "active_minutes", icon: Timer, type: "int", color: "text-cyan-400", suffix: "min" },
   { key: "restingHeartRate", field: "resting_heart_rate", icon: Heart, type: "int", color: "text-red-500", suffix: "bpm" },
   { key: "sleepHours", field: "sleep_hours", icon: Moon, type: "float", color: "text-indigo-400", suffix: "h" },
-] as const;
+];
 
 function toLocalDateString(d: Date): string {
   const y = d.getFullYear();

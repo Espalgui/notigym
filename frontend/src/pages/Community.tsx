@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Plus, Send, Dumbbell, Trophy, TrendingUp } from "lucide-react";
+import { Heart, MessageCircle, Plus, Send, Dumbbell, Trophy, TrendingUp, X } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { formatDateTime } from "@/lib/utils";
@@ -157,7 +157,12 @@ export default function Community() {
       {showNewPost && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <motion.form initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} onSubmit={handleCreatePost} className="card w-full max-w-md">
-            <h2 className="text-lg font-display font-bold mb-4">{t("community.newPost")}</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-display font-bold">{t("community.newPost")}</h2>
+              <button type="button" onClick={() => setShowNewPost(false)} className="p-1.5 rounded-xl text-onair-muted hover:text-onair-text hover:bg-onair-surface transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <select value={newPost.post_type} onChange={(e) => setNewPost({ ...newPost, post_type: e.target.value })} className="w-full mb-3">
               {["general", "workout", "pr", "progress", "program"].map((type) => (
                 <option key={type} value={type}>{t(`community.postTypes.${type}` as any)}</option>
@@ -185,7 +190,9 @@ export default function Community() {
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card w-full max-w-md max-h-[70vh] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-display font-bold">{t("community.comment")}</h2>
-              <button onClick={() => setCommentPost(null)} className="btn-ghost text-sm">{t("common.cancel")}</button>
+              <button onClick={() => setCommentPost(null)} className="p-1.5 rounded-xl text-onair-muted hover:text-onair-text hover:bg-onair-surface transition-colors">
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <div className="flex-1 overflow-auto space-y-3 mb-4">
               {comments.map((c: any) => (

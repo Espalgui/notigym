@@ -43,20 +43,6 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
           {
-            // API calls — network first, fallback cache 10s
-            urlPattern: /^https?:\/\/.*\/api\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              networkTimeoutSeconds: 10,
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24, // 24h
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
             // Google Fonts — cache first
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "CacheFirst",

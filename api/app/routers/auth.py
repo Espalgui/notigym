@@ -13,6 +13,7 @@ from app.models.user import User
 from app.notifications import create_notification
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.user import UserCreate, UserResponse
+from app.utils.backup_codes import verify_and_consume_backup_code
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -89,9 +90,9 @@ async def login(request: Request, response: Response, login_in: LoginRequest, db
 
         if not code_valid:
             stored_codes = json.loads(user.backup_codes or "[]")
-            if login_in.totp_code.upper() in stored_codes:
-                stored_codes.remove(login_in.totp_code.upper())
-                user.backup_codes = json.dumps(stored_codes)
+            valid, remaining = verify_and_consume_backup_code(login_in.totp_code, stored_codes)
+            if valid:
+                user.backup_codes = json.dumps(remaining)
                 await db.flush()
             else:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid 2FA code")

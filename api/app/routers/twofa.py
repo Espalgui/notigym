@@ -13,6 +13,7 @@ from app.auth.dependencies import get_current_active_user
 from app.database import get_db
 from app.limiter import limiter
 from app.models.user import User
+from app.utils.backup_codes import hash_backup_codes, verify_and_consume_backup_code
 from app.schemas.twofa import (
     TwoFADisableRequest,
     TwoFASetupResponse,
@@ -61,13 +62,13 @@ async def twofa_setup(
     backup_codes = _generate_backup_codes()
 
     current_user.totp_secret = secret
-    current_user.backup_codes = json.dumps(backup_codes)
+    current_user.backup_codes = json.dumps(hash_backup_codes(backup_codes))
     await db.flush()
 
     return TwoFASetupResponse(
         secret=secret,
         qr_code=qr_code,
-        backup_codes=backup_codes,
+        backup_codes=backup_codes,  # Retourne les codes en clair une seule fois à l'utilisateur
     )
 
 
@@ -128,9 +129,9 @@ async def twofa_disable(
 
     if not code_valid:
         stored_codes = json.loads(current_user.backup_codes or "[]")
-        if body.code.upper() in stored_codes:
-            stored_codes.remove(body.code.upper())
-            current_user.backup_codes = json.dumps(stored_codes)
+        valid, remaining = verify_and_consume_backup_code(body.code, stored_codes)
+        if valid:
+            current_user.backup_codes = json.dumps(remaining)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -169,6 +170,6 @@ async def regenerate_backup_codes(
             detail="2FA is not enabled",
         )
     codes = _generate_backup_codes()
-    current_user.backup_codes = json.dumps(codes)
+    current_user.backup_codes = json.dumps(hash_backup_codes(codes))
     await db.flush()
-    return {"codes": codes}
+    return {"codes": codes}  # Retourne les codes en clair une seule fois

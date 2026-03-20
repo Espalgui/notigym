@@ -70,6 +70,14 @@
     "title": "Entraînements",
     "myPrograms": "Mes programmes",
     "createProgram": "Créer un programme",
+    "days": "jours",
+    "exercises": "exercices",
+    "templates": {
+      "title": "Recommandés pour toi",
+      "import": "Importer ce programme",
+      "imported": "Programme ajouté à vos programmes !",
+      "female": "Femme"
+    },
     "startSession": "Démarrer une séance",
     "history": "Historique",
     "records": "Records personnels",

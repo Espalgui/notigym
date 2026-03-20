@@ -70,6 +70,14 @@
     "title": "Workouts",
     "myPrograms": "My Programs",
     "createProgram": "Create Program",
+    "days": "days",
+    "exercises": "exercises",
+    "templates": {
+      "title": "Recommended for you",
+      "import": "Import this program",
+      "imported": "Program added to your programs!",
+      "female": "Women"
+    },
     "startSession": "Start Session",
     "history": "History",
     "records": "Personal Records",

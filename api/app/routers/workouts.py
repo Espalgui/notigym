@@ -9,7 +9,9 @@ from sqlalchemy.orm import selectinload
 from app.auth.dependencies import get_current_active_user
 from app.database import get_db
 from app.models.user import User
+from app.models.exercise import Exercise
 from app.notifications import create_notification
+from app.workout_templates import get_templates_for_user
 from app.models.workout import (
     PersonalRecord,
     ProgramDay,
@@ -530,3 +532,100 @@ async def get_workout_stats(
         sessions_this_week=sessions_week,
         sessions_this_month=sessions_month,
     )
+
+
+# --- Templates ---
+
+@router.get("/templates")
+async def list_templates(
+    current_user: User = Depends(get_current_active_user),
+):
+    """Retourne les templates de programmes filtrés et triés selon le profil de l'utilisateur."""
+    templates = get_templates_for_user(
+        goal=current_user.goal,
+        training_type=current_user.training_type,
+        gender=current_user.gender,
+    )
+    lang = getattr(current_user, "language", "fr") or "fr"
+    result = []
+    for t in templates:
+        result.append({
+            "id": t["id"],
+            "name": t[f"name_{lang}"] if f"name_{lang}" in t else t["name_fr"],
+            "description": t[f"description_{lang}"] if f"description_{lang}" in t else t["description_fr"],
+            "program_type": t["program_type"],
+            "days_per_week": t["days_per_week"],
+            "days_count": len(t["days"]),
+            "exercises_count": sum(len(d["exercises"]) for d in t["days"]),
+            "goals": t["goals"],
+            "training_types": t["training_types"],
+            "genders": t["genders"],
+        })
+    return result
+
+
+@router.post("/templates/{template_id}/import", response_model=WorkoutProgramResponse, status_code=status.HTTP_201_CREATED)
+async def import_template(
+    template_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Clone un template en programme personnel pour l'utilisateur."""
+    all_templates = get_templates_for_user(None, None, None)
+    # Cherche dans tous les templates (sans filtre genre pour le cas où l'utilisateur force l'import)
+    from app.workout_templates import TEMPLATES
+    template = next((t for t in TEMPLATES if t["id"] == template_id), None)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    lang = getattr(current_user, "language", "fr") or "fr"
+    name = template[f"name_{lang}"] if f"name_{lang}" in template else template["name_fr"]
+
+    # Crée le programme
+    program = WorkoutProgram(
+        user_id=current_user.id,
+        name=name,
+        description=template[f"description_{lang}"] if f"description_{lang}" in template else template["description_fr"],
+        program_type=template["program_type"],
+    )
+    db.add(program)
+    await db.flush()
+
+    # Crée les jours et exercices
+    for day_order, day_data in enumerate(template["days"]):
+        day_name = day_data[f"name_{lang}"] if f"name_{lang}" in day_data else day_data["name_fr"]
+        day = ProgramDay(
+            program_id=program.id,
+            name=day_name,
+            day_order=day_order,
+        )
+        db.add(day)
+        await db.flush()
+
+        for ex_order, ex_data in enumerate(day_data["exercises"]):
+            exercise_result = await db.execute(
+                select(Exercise).where(Exercise.name_key == ex_data["name_key"])
+            )
+            exercise = exercise_result.scalar_one_or_none()
+            if not exercise:
+                continue
+
+            pe = ProgramExercise(
+                program_day_id=day.id,
+                exercise_id=exercise.id,
+                exercise_order=ex_order,
+                sets=ex_data["sets"],
+                reps_min=ex_data["reps_min"],
+                reps_max=ex_data["reps_max"],
+                rest_seconds=ex_data["rest_seconds"],
+            )
+            db.add(pe)
+
+    await db.flush()
+
+    result = await db.execute(
+        select(WorkoutProgram)
+        .where(WorkoutProgram.id == program.id)
+        .options(selectinload(WorkoutProgram.days).selectinload(ProgramDay.exercises).selectinload(ProgramExercise.exercise))
+    )
+    return result.scalar_one()

@@ -6,6 +6,7 @@
   "nav": {
     "dashboard": "Tableau de bord",
     "workouts": "Entraînements",
+    "tabata": "Tabata Timer",
     "body": "Suivi corporel",
     "nutrition": "Nutrition",
     "community": "Communauté",
@@ -189,6 +190,31 @@
       "general": "Général"
     }
   },
+  "hydration": {
+    "reminder": "Rappel hydratation",
+    "reminderEvery": "Rappel toutes les"
+  },
+  "tabata": {
+    "title": "Tabata Timer",
+    "settings": "Configuration",
+    "workDuration": "Durée travail (s)",
+    "restDuration": "Durée repos (s)",
+    "rounds": "Rounds",
+    "prepTime": "Préparation (s)",
+    "exercises": "Exercices (un par ligne)",
+    "start": "Démarrer",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "reset": "Réinitialiser",
+    "round": "Round",
+    "of": "/",
+    "phases": {
+      "prepare": "PRÊT",
+      "work": "TRAVAIL",
+      "rest": "REPOS",
+      "done": "TERMINÉ"
+    }
+  },
   "profile": {
     "title": "Mon profil",
     "tabs": {
@@ -254,6 +280,21 @@
       "title": "Mes objectifs",
       "subtitle": "Définissez vos objectifs pour un suivi personnalisé.",
       "fitnessGoal": "Objectif fitness",
+      "trainingType": "Type d'entraînement",
+      "trainingTypes": {
+        "musculation": "Musculation",
+        "musculationDesc": "Poids libres, hypertrophie",
+        "poids_corps": "Poids de corps",
+        "poids_corpsDesc": "Calisthenics, sans équipement",
+        "machines": "Machines",
+        "machinesDesc": "Entraînement guidé en salle",
+        "hiit": "HIIT",
+        "hiitDesc": "Intervalles haute intensité",
+        "isometrie": "Isométrie",
+        "isometrieDesc": "Contractions statiques, street workout",
+        "mixed": "Mixte",
+        "mixedDesc": "Combinaison de disciplines"
+      },
       "goalTypes": {
         "bulk": "Prise de masse",
         "cut": "Sèche",

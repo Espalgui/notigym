@@ -9,6 +9,7 @@ class NutritionGoalCreate(BaseModel):
     protein_g: float
     carbs_g: float
     fat_g: float
+    water_goal_ml: int = 2000
 
 
 class NutritionGoalResponse(BaseModel):
@@ -18,6 +19,7 @@ class NutritionGoalResponse(BaseModel):
     protein_g: float
     carbs_g: float
     fat_g: float
+    water_goal_ml: int = 2000
     is_active: bool
     created_at: datetime
 
@@ -99,4 +101,5 @@ class WaterIntakeResponse(BaseModel):
 class DailyWaterSummary(BaseModel):
     date: date
     total_ml: int = 0
+    goal_ml: int = 2000
     entries: list[WaterIntakeResponse] = []

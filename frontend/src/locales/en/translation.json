@@ -6,6 +6,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "workouts": "Workouts",
+    "tabata": "Tabata Timer",
     "body": "Body Tracking",
     "nutrition": "Nutrition",
     "community": "Community",
@@ -189,6 +190,31 @@
       "general": "General"
     }
   },
+  "hydration": {
+    "reminder": "Hydration reminder",
+    "reminderEvery": "Remind every"
+  },
+  "tabata": {
+    "title": "Tabata Timer",
+    "settings": "Settings",
+    "workDuration": "Work duration (s)",
+    "restDuration": "Rest duration (s)",
+    "rounds": "Rounds",
+    "prepTime": "Preparation (s)",
+    "exercises": "Exercises (one per line)",
+    "start": "Start",
+    "pause": "Pause",
+    "resume": "Resume",
+    "reset": "Reset",
+    "round": "Round",
+    "of": "/",
+    "phases": {
+      "prepare": "GET READY",
+      "work": "WORK",
+      "rest": "REST",
+      "done": "DONE"
+    }
+  },
   "profile": {
     "title": "My Profile",
     "tabs": {
@@ -254,6 +280,21 @@
       "title": "My Goals",
       "subtitle": "Set your goals for personalized tracking.",
       "fitnessGoal": "Fitness goal",
+      "trainingType": "Training type",
+      "trainingTypes": {
+        "musculation": "Weightlifting",
+        "musculationDesc": "Free weights, hypertrophy",
+        "poids_corps": "Bodyweight",
+        "poids_corpsDesc": "Calisthenics, no equipment",
+        "machines": "Machines",
+        "machinesDesc": "Guided gym training",
+        "hiit": "HIIT",
+        "hiitDesc": "High intensity intervals",
+        "isometrie": "Isometrics",
+        "isometrieDesc": "Static contractions, street workout",
+        "mixed": "Mixed",
+        "mixedDesc": "Combination of disciplines"
+      },
       "goalTypes": {
         "bulk": "Bulking",
         "cut": "Cutting",

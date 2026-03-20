@@ -327,6 +327,14 @@ async def update_session(
             message=f"Bravo {current_user.first_name}, ta séance est enregistrée. {duration}",
             link="/workouts",
         )
+        await create_notification(
+            db,
+            user_id=current_user.id,
+            type="whey_reminder",
+            title="Nutrition post-séance",
+            message=f"C'est le moment idéal pour prendre ta dose de protéines, {current_user.first_name} ! 🥤",
+            link="/nutrition",
+        )
 
     result = await db.execute(
         select(WorkoutSession)

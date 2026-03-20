@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import { useHydrationReminder } from "@/hooks/useHydrationReminder";
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useHydrationReminder();
 
   useEffect(() => {
     document.body.style.overflow = sidebarOpen ? "hidden" : "";

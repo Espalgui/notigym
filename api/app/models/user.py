@@ -21,6 +21,7 @@ class User(Base):
     height_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
     gender: Mapped[str | None] = mapped_column(String(20), nullable=True)
     goal: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    training_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
     privacy: Mapped[str] = mapped_column(String(20), default="private", server_default="private")
     language: Mapped[str] = mapped_column(String(5), default="fr", server_default="fr")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")

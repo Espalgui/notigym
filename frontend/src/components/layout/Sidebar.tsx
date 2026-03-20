@@ -16,6 +16,7 @@ import {
   Moon,
   BarChart3,
   Download,
+  Timer,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
@@ -28,14 +29,15 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, key: "nav.dashboard" },
-  { to: "/workouts", icon: Dumbbell, key: "nav.workouts" },
-  { to: "/activity", icon: Footprints, key: "nav.activity" },
-  { to: "/statistics", icon: BarChart3, key: "nav.statistics" },
-  { to: "/body", icon: Activity, key: "nav.body" },
-  { to: "/nutrition", icon: Apple, key: "nav.nutrition" },
-  { to: "/community", icon: Users, key: "nav.community" },
-  { to: "/profile", icon: User, key: "nav.profile" },
+  { to: "/", icon: LayoutDashboard, key: "nav.dashboard", accent: null },
+  { to: "/workouts", icon: Dumbbell, key: "nav.workouts", accent: null },
+  { to: "/tabata", icon: Timer, key: "nav.tabata", accent: "amber" },
+  { to: "/activity", icon: Footprints, key: "nav.activity", accent: null },
+  { to: "/statistics", icon: BarChart3, key: "nav.statistics", accent: null },
+  { to: "/body", icon: Activity, key: "nav.body", accent: null },
+  { to: "/nutrition", icon: Apple, key: "nav.nutrition", accent: null },
+  { to: "/community", icon: Users, key: "nav.community", accent: null },
+  { to: "/profile", icon: User, key: "nav.profile", accent: null },
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
@@ -75,41 +77,57 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       </NavLink>
 
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ to, icon: Icon, key }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === "/"}
-            onClick={onClose}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group",
-                isActive
-                  ? "bg-onair-red/10 text-onair-red shadow-sm"
-                  : "text-onair-muted hover:text-onair-text hover:bg-onair-surface"
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <div
-                  className={cn(
-                    "p-1.5 rounded-lg transition-colors",
-                    isActive
-                      ? "bg-onair-red/15"
-                      : "group-hover:bg-onair-surface"
+        {navItems.map(({ to, icon: Icon, key, accent }) => {
+          const ACTIVE_CLASSES = {
+            amber: "bg-amber-500/10 text-amber-400 shadow-sm",
+            default: "bg-onair-red/10 text-onair-red shadow-sm",
+          };
+          const ACTIVE_ICON_CLASSES = {
+            amber: "bg-amber-500/15",
+            default: "bg-onair-red/15",
+          };
+          const ACTIVE_DOT_CLASSES = {
+            amber: "bg-amber-400",
+            default: "bg-onair-red",
+          };
+          const activeClass = accent === "amber" ? ACTIVE_CLASSES.amber : ACTIVE_CLASSES.default;
+          const activeIconClass = accent === "amber" ? ACTIVE_ICON_CLASSES.amber : ACTIVE_ICON_CLASSES.default;
+          const activeDotClass = accent === "amber" ? ACTIVE_DOT_CLASSES.amber : ACTIVE_DOT_CLASSES.default;
+
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === "/"}
+              onClick={onClose}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group",
+                  isActive
+                    ? activeClass
+                    : "text-onair-muted hover:text-onair-text hover:bg-onair-surface"
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div
+                    className={cn(
+                      "p-1.5 rounded-lg transition-colors",
+                      isActive ? activeIconClass : "group-hover:bg-onair-surface"
+                    )}
+                  >
+                    <Icon className="w-4.5 h-4.5" />
+                  </div>
+                  <span>{t(key)}</span>
+                  {isActive && (
+                    <div className={cn("ml-auto w-1.5 h-1.5 rounded-full", activeDotClass)} />
                   )}
-                >
-                  <Icon className="w-4.5 h-4.5" />
-                </div>
-                <span>{t(key)}</span>
-                {isActive && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-onair-red" />
-                )}
-              </>
-            )}
-          </NavLink>
-        ))}
+                </>
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* Install PWA */}

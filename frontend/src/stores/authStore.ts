@@ -10,6 +10,7 @@ interface User {
   height_cm: number | null;
   gender: string | null;
   goal: string | null;
+  training_type: string | null;
   privacy: string;
   language: string;
   is_2fa_enabled: boolean;

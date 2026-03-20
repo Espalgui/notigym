@@ -20,6 +20,7 @@ class UserUpdate(BaseModel):
     height_cm: float | None = Field(default=None, ge=50, le=300)
     gender: Literal["male", "female", "other"] | None = None
     goal: str | None = Field(default=None, max_length=500)
+    training_type: Literal["musculation", "poids_corps", "machines", "hiit", "isometrie", "mixed"] | None = None
     privacy: Literal["public", "private"] | None = None
     language: str | None = Field(default=None, max_length=10)
 
@@ -34,6 +35,7 @@ class UserResponse(BaseModel):
     height_cm: float | None = None
     gender: str | None = None
     goal: str | None = None
+    training_type: str | None = None
     privacy: str
     language: str
     is_active: bool

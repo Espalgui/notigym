@@ -267,4 +267,14 @@ async def get_water(
     )
     entries = result.scalars().all()
     total = sum(e.amount_ml for e in entries)
-    return DailyWaterSummary(date=date, total_ml=total, entries=entries)
+
+    goal_result = await db.execute(
+        select(NutritionGoal)
+        .where(NutritionGoal.user_id == current_user.id, NutritionGoal.is_active == True)  # noqa: E712
+        .order_by(NutritionGoal.created_at.desc())
+        .limit(1)
+    )
+    active_goal = goal_result.scalar_one_or_none()
+    goal_ml = (active_goal.water_goal_ml or 2000) if active_goal else 2000
+
+    return DailyWaterSummary(date=date, total_ml=total, goal_ml=goal_ml, entries=entries)

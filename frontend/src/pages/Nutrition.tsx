@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip,
+  PieChart, Pie, Cell, ResponsiveContainer,
 } from "recharts";
 import { Apple, Plus, Droplets, Target } from "lucide-react";
 import api from "@/lib/api";
 import { useThemeStore } from "@/stores/themeStore";
 import toast from "react-hot-toast";
+import { useHydrationReminder } from "@/hooks/useHydrationReminder";
 
 interface NutritionSummary {
   date: string;
@@ -15,9 +16,16 @@ interface NutritionSummary {
   total_protein_g: number;
   total_carbs_g: number;
   total_fat_g: number;
-  goal: { calories: number; protein_g: number; carbs_g: number; fat_g: number } | null;
+  goal: { calories: number; protein_g: number; carbs_g: number; fat_g: number; water_goal_ml?: number } | null;
   calories_remaining: number | null;
   entries: any[];
+}
+
+interface WaterSummary {
+  date: string;
+  total_ml: number;
+  goal_ml: number;
+  entries: { id: string; amount_ml: number; created_at: string }[];
 }
 
 export default function Nutrition() {
@@ -25,18 +33,28 @@ export default function Nutrition() {
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState(today);
   const [summary, setSummary] = useState<NutritionSummary | null>(null);
+  const [waterSummary, setWaterSummary] = useState<WaterSummary | null>(null);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [entryForm, setEntryForm] = useState({
     meal_type: "lunch", food_name: "", calories: "", protein_g: "", carbs_g: "", fat_g: "", quantity: "", unit: "g",
   });
-  const [goalForm, setGoalForm] = useState({ calories: "2000", protein_g: "150", carbs_g: "250", fat_g: "70" });
+  const [goalForm, setGoalForm] = useState({ calories: "2000", protein_g: "150", carbs_g: "250", fat_g: "70", water_goal_ml: "2000" });
+  const [customWater, setCustomWater] = useState("");
+  const [reminderMinutes, setReminderMinutes] = useState(
+    () => parseInt(localStorage.getItem("hydration_reminder_interval") || "45", 10)
+  );
+  const { setReminderInterval } = useHydrationReminder();
 
   const fetchSummary = () => {
     api.get(`/nutrition/summary?date=${date}`).then((r) => setSummary(r.data)).catch(() => {});
   };
 
-  useEffect(fetchSummary, [date]);
+  const fetchWater = () => {
+    api.get(`/nutrition/water?date=${date}`).then((r) => setWaterSummary(r.data)).catch(() => {});
+  };
+
+  useEffect(() => { fetchSummary(); fetchWater(); }, [date]);
 
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,10 +84,22 @@ export default function Nutrition() {
         protein_g: +goalForm.protein_g,
         carbs_g: +goalForm.carbs_g,
         fat_g: +goalForm.fat_g,
+        water_goal_ml: +goalForm.water_goal_ml,
       });
       toast.success(t("common.success"));
       setShowGoalForm(false);
       fetchSummary();
+      fetchWater();
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
+
+  const handleAddWater = async (ml: number) => {
+    if (!ml || ml <= 0) return;
+    try {
+      await api.post("/nutrition/water", { date, amount_ml: ml });
+      fetchWater();
     } catch {
       toast.error(t("common.error"));
     }
@@ -184,6 +214,86 @@ export default function Nutrition() {
         )}
       </div>
 
+      {/* Water section */}
+      <div className="card space-y-4">
+        <div className="flex items-center gap-2">
+          <Droplets className="w-5 h-5 text-onair-cyan" />
+          <h3 className="font-display font-semibold">{t("nutrition.water")}</h3>
+          {waterSummary && (
+            <span className="ml-auto text-sm text-onair-muted font-mono">
+              {waterSummary.total_ml} / {waterSummary.goal_ml} ml
+            </span>
+          )}
+        </div>
+
+        {waterSummary && (
+          <div className="h-2 bg-onair-surface rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-onair-cyan to-blue-400 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.round((waterSummary.total_ml / waterSummary.goal_ml) * 100))}%` }}
+            />
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          {[150, 250, 500].map((ml) => (
+            <button
+              key={ml}
+              onClick={() => handleAddWater(ml)}
+              className="btn-secondary text-sm"
+            >
+              +{ml} ml
+            </button>
+          ))}
+          <div className="flex gap-2 flex-1 min-w-[160px]">
+            <input
+              type="number"
+              value={customWater}
+              onChange={(e) => setCustomWater(e.target.value)}
+              placeholder="ml"
+              className="flex-1 text-sm"
+            />
+            <button
+              onClick={() => { handleAddWater(+customWater); setCustomWater(""); }}
+              className="btn-primary text-sm px-3"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <label className="text-xs text-onair-muted whitespace-nowrap">
+            {t("hydration.reminderEvery")}
+          </label>
+          <input
+            type="number"
+            value={reminderMinutes}
+            onChange={(e) => {
+              const v = +e.target.value;
+              setReminderMinutes(v);
+              setReminderInterval(v);
+            }}
+            className="w-20 text-sm"
+            min={1}
+          />
+          <span className="text-xs text-onair-muted">{t("common.min")}</span>
+        </div>
+
+        {waterSummary && waterSummary.entries.length > 0 && (
+          <div className="space-y-1">
+            {waterSummary.entries.map((e) => (
+              <div key={e.id} className="flex items-center justify-between text-sm px-2 py-1.5 bg-onair-surface rounded-lg">
+                <span className="text-onair-muted text-xs">
+                  {new Date(e.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                <span className="font-mono text-onair-cyan">+{e.amount_ml} ml</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Add Entry Modal */}
       {showAddEntry && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -221,6 +331,7 @@ export default function Nutrition() {
               <div><label className="text-sm text-onair-muted">{t("nutrition.protein")} (g)</label><input type="number" value={goalForm.protein_g} onChange={(e) => setGoalForm({ ...goalForm, protein_g: e.target.value })} required className="w-full" /></div>
               <div><label className="text-sm text-onair-muted">{t("nutrition.carbs")} (g)</label><input type="number" value={goalForm.carbs_g} onChange={(e) => setGoalForm({ ...goalForm, carbs_g: e.target.value })} required className="w-full" /></div>
               <div><label className="text-sm text-onair-muted">{t("nutrition.fat")} (g)</label><input type="number" value={goalForm.fat_g} onChange={(e) => setGoalForm({ ...goalForm, fat_g: e.target.value })} required className="w-full" /></div>
+              <div><label className="text-sm text-onair-muted">{t("nutrition.water")} ({t("common.ml")})</label><input type="number" value={goalForm.water_goal_ml} onChange={(e) => setGoalForm({ ...goalForm, water_goal_ml: e.target.value })} required className="w-full" /></div>
             </div>
             <div className="flex gap-3 mt-5">
               <button type="button" onClick={() => setShowGoalForm(false)} className="btn-secondary flex-1">{t("common.cancel")}</button>

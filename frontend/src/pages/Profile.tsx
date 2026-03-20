@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
+  User2,
   Globe,
   Target,
   Shield,
@@ -27,6 +28,11 @@ import {
   Smartphone,
   Copy,
   RefreshCw,
+  Dumbbell,
+  Cog,
+  Zap,
+  Minus,
+  Layers,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import api from "@/lib/api";
@@ -259,6 +265,7 @@ export default function Profile() {
     height_cm: user?.height_cm?.toString() || "",
     gender: user?.gender || "",
     goal: user?.goal || "",
+    training_type: user?.training_type || "",
     privacy: user?.privacy || "private",
     language: user?.language || "fr",
   });
@@ -416,6 +423,7 @@ export default function Profile() {
         last_name: form.last_name,
         gender: form.gender || null,
         goal: form.goal || null,
+        training_type: form.training_type || null,
         privacy: form.privacy,
         language: form.language,
       };
@@ -1146,6 +1154,48 @@ export default function Profile() {
                             {t(`profile.goals.goalTypes.${g}`)}
                           </button>
                         ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm text-onair-muted mb-3 block">
+                        {t("profile.goals.trainingType")}
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {(["musculation", "poids_corps", "machines", "hiit", "isometrie", "mixed"] as const).map((type) => {
+                          const TYPE_CLASSES = {
+                            musculation: { active: "bg-onair-red/10 border-onair-red/30 text-onair-red", icon: Dumbbell },
+                            poids_corps:  { active: "bg-onair-cyan/10 border-onair-cyan/30 text-onair-cyan", icon: User2 },
+                            machines:     { active: "bg-purple-500/10 border-purple-500/30 text-purple-400", icon: Cog },
+                            hiit:         { active: "bg-amber-500/10 border-amber-500/30 text-amber-400", icon: Zap },
+                            isometrie:    { active: "bg-green-500/10 border-green-500/30 text-green-400", icon: Minus },
+                            mixed:        { active: "bg-onair-muted/10 border-onair-muted/30 text-onair-muted", icon: Layers },
+                          };
+                          const { active, icon: Icon } = TYPE_CLASSES[type];
+                          const isActive = form.training_type === type;
+                          return (
+                            <button
+                              key={type}
+                              onClick={() => setForm({ ...form, training_type: type })}
+                              className={cn(
+                                "p-3 rounded-xl text-left transition-all duration-200 border",
+                                isActive
+                                  ? `${active} shadow-sm`
+                                  : "border-onair-border text-onair-muted hover:text-onair-text hover:border-onair-border/80"
+                              )}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <Icon className="w-4 h-4" />
+                                <span className="text-sm font-medium">
+                                  {t(`profile.goals.trainingTypes.${type}`)}
+                                </span>
+                              </div>
+                              <p className="text-xs opacity-70">
+                                {t(`profile.goals.trainingTypes.${type}Desc`)}
+                              </p>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>

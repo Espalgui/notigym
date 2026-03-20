@@ -17,6 +17,7 @@ import Community from "@/pages/Community";
 import Activity from "@/pages/Activity";
 import Statistics from "@/pages/Statistics";
 import Profile from "@/pages/Profile";
+import TabataTimer from "@/pages/TabataTimer";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -73,6 +74,7 @@ export default function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="workouts" element={<Workouts />} />
+          <Route path="tabata" element={<TabataTimer />} />
           <Route path="workouts/new" element={<ProgramBuilder />} />
           <Route path="workouts/program/:id" element={<ProgramBuilder />} />
           <Route path="workouts/session" element={<SessionLogger />} />

@@ -13,6 +13,7 @@ import {
   Gift,
   ChevronRight,
   Zap,
+  Users,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import api from "@/lib/api";
@@ -37,6 +38,7 @@ const typeIcons: Record<string, typeof Bell> = {
   like: Heart,
   comment: MessageCircle,
   whey_reminder: Zap,
+  new_post: Users,
 };
 
 function timeAgo(dateStr: string, t: (k: string, opts?: any) => string): string {

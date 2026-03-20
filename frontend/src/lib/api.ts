@@ -17,7 +17,11 @@ api.interceptors.response.use(
         await axios.post("/api/auth/refresh", {}, { withCredentials: true });
         return api(original);
       } catch {
-        window.location.href = "/login";
+        // Évite la boucle infinie sur mobile : si on est déjà sur /login,
+        // on laisse fetchUser() + ProtectedRoute gérer la redirection via React Router
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(error);

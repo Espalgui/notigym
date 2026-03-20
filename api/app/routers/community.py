@@ -63,6 +63,21 @@ async def create_post(
     db.add(post)
     await db.flush()
 
+    # Notifier tous les autres utilisateurs actifs
+    other_users_result = await db.execute(
+        select(User.id).where(User.id != current_user.id)
+    )
+    other_user_ids = other_users_result.scalars().all()
+    for uid in other_user_ids:
+        await create_notification(
+            db,
+            user_id=uid,
+            type="new_post",
+            title="Nouveau post dans la communauté !",
+            message=f"{current_user.first_name} {current_user.last_name} a publié quelque chose.",
+            link="/community",
+        )
+
     result = await db.execute(
         select(CommunityPost)
         .where(CommunityPost.id == post.id)

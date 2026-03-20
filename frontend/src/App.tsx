@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
+import { InstallPWA } from "@/components/InstallPWA";
 import Layout from "@/components/layout/Layout";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -59,6 +60,7 @@ export default function App() {
           },
         }}
       />
+      <InstallPWA />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { Globe, Radio } from "lucide-react";
+import { Globe } from "lucide-react";
 
 export default function LanguageSelect() {
   const { t, i18n } = useTranslation();
@@ -28,8 +28,7 @@ export default function LanguageSelect() {
       >
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 mb-6">
-            <Radio className="w-10 h-10 text-onair-red" />
-            <h1 className="text-4xl font-display font-bold gradient-text">NotiGym</h1>
+            <img src="/notigym-icon.svg" alt="NotiGym" className="h-12 w-12" />
           </div>
           <div className="flex items-center justify-center gap-2 mb-2">
             <Globe className="w-5 h-5 text-onair-cyan" />

@@ -11,7 +11,6 @@ import {
   User,
   LogOut,
   X,
-  Radio,
   Sun,
   Moon,
   BarChart3,
@@ -59,21 +58,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         onClick={onClose}
         className="p-6 flex items-center gap-3 hover:bg-onair-surface/50 transition-colors cursor-pointer"
       >
-        <div className="relative">
-          <Radio className="w-8 h-8 text-onair-red" />
-          <div className="absolute -top-0.5 -right-0.5 live-dot scale-50" />
-        </div>
-        <div>
-          <h1 className="text-xl font-display font-bold gradient-text">
-            NotiGym
-          </h1>
-          <div className="flex items-center gap-1.5">
-            <span className="live-dot scale-50" />
-            <span className="text-[10px] uppercase tracking-[0.2em] text-onair-red font-bold">
-              {t("dashboard.onAir")}
-            </span>
-          </div>
-        </div>
+        <img src="/notigym-icon.svg" alt="NotiGym" className="h-9 w-9" />
       </NavLink>
 
       <nav className="flex-1 px-3 py-4 space-y-1">

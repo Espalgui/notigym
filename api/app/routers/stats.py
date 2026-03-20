@@ -224,16 +224,6 @@ async def get_progression(
     )
     total_prs = total_prs_q.scalar() or 0
 
-    avg_calories_q = await db.execute(
-        select(func.avg(func.nullif(
-            select(func.sum(NutritionEntry.calories))
-            .where(NutritionEntry.user_id == uid)
-            .correlate(None)
-            .scalar_subquery(),
-            0,
-        )))
-    )
-
     cal_per_day_q = (
         select(func.sum(NutritionEntry.calories).label("daily_cal"))
         .where(

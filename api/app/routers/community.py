@@ -1,13 +1,15 @@
 import uuid as uuid_mod
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.auth.dependencies import get_current_active_user
 from app.database import get_db
 from app.models.community import CommunityPost, PostComment, PostLike
+from app.models.notification import Notification
 from app.models.notification_mute import NotificationMute
 from app.models.user import User
 from app.notifications import create_notification
@@ -74,15 +76,23 @@ async def create_post(
         .where(User.notifications_enabled == True)  # noqa: E712
         .where(User.id.not_in(muted_subquery))
     )
-    for uid in other_users_result.scalars().all():
-        await create_notification(
-            db,
-            user_id=uid,
-            type="new_post",
-            title="Nouveau post dans la communauté !",
-            message=f"{current_user.first_name} {current_user.last_name} a publié quelque chose.",
-            link="/community",
-        )
+    other_user_ids = other_users_result.scalars().all()
+    notif_rows = [
+        {
+            "id": uuid_mod.uuid4(),
+            "user_id": uid,
+            "type": "new_post",
+            "title": "Nouveau post dans la communauté !",
+            "message": f"{current_user.first_name} {current_user.last_name[0]}. a publié quelque chose.",
+            "link": "/community",
+            "is_read": False,
+            "created_at": datetime.now(timezone.utc),
+        }
+        for uid in other_user_ids
+    ]
+    if notif_rows:
+        await db.execute(insert(Notification), notif_rows)
+        await db.flush()
 
     result = await db.execute(
         select(CommunityPost)
@@ -156,7 +166,7 @@ async def toggle_like(
                 user_id=post.user_id,
                 type="like",
                 title="Nouveau like !",
-                message=f"{current_user.first_name} {current_user.last_name} a aimé ton post.",
+                message=f"{current_user.first_name} {current_user.last_name[0]}. a aimé ton post.",
                 link="/community",
             )
 
@@ -193,7 +203,7 @@ async def add_comment(
             user_id=post.user_id,
             type="comment",
             title="Nouveau commentaire !",
-            message=f"{current_user.first_name} {current_user.last_name} a commenté ton post.",
+            message=f"{current_user.first_name} {current_user.last_name[0]}. a commenté ton post.",
             link="/community",
         )
 

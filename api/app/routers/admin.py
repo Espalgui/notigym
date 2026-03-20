@@ -1,8 +1,9 @@
+import logging
 import secrets
 import string
 import uuid as uuid_mod
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -10,8 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
 from app.database import get_db
+from app.limiter import limiter
 from app.models.user import User
 from app.schemas.user import UserResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -92,9 +96,11 @@ async def toggle_user_active(
 
 
 @router.post("/users/{user_id}/reset-password", response_model=PasswordResetResponse)
+@limiter.limit("10/minute")
 async def reset_user_password(
+    request: Request,
     user_id: uuid_mod.UUID,
-    _: User = Depends(get_admin_user),
+    admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(User).where(User.id == user_id))
@@ -111,11 +117,14 @@ async def reset_user_password(
     user.backup_codes = None
     await db.flush()
 
+    logger.warning("ADMIN %s reset password for user %s", admin.id, user_id)
     return PasswordResetResponse(temp_password=temp_password)
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_user(
+    request: Request,
     user_id: uuid_mod.UUID,
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
@@ -126,4 +135,5 @@ async def delete_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    logger.warning("ADMIN %s deleted user %s", admin.id, user_id)
     await db.delete(user)

@@ -2,7 +2,7 @@ import os
 import uuid as uuid_mod
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +14,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.security import DeleteAccount, PasswordChange
 from app.schemas.user import UserProfile, UserResponse, UserUpdate
+from app.limiter import limiter
 from app.utils.image import validate_image
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -68,7 +69,9 @@ async def upload_avatar(
 
 
 @router.put("/me/password")
+@limiter.limit("5/minute")
 async def change_password(
+    request: Request,
     data: PasswordChange,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
@@ -78,10 +81,10 @@ async def change_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect",
         )
-    if len(data.new_password) < 6:
+    if len(data.new_password) < 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be at least 6 characters",
+            detail="New password must be at least 8 characters",
         )
     current_user.password_hash = pwd_context.hash(data.new_password)
     current_user.updated_at = datetime.now(timezone.utc)

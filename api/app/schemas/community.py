@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.user import UserProfile
 
@@ -12,6 +12,13 @@ class PostCreate(BaseModel):
     content: str = Field(min_length=1, max_length=5000)
     reference_id: uuid.UUID | None = None
     image_url: str | None = None
+
+    @field_validator("image_url")
+    @classmethod
+    def validate_image_url(cls, v: str | None) -> str | None:
+        if v is not None and not v.startswith("/uploads/"):
+            raise ValueError("image_url must be a relative /uploads/ path")
+        return v
 
 
 class PostResponse(BaseModel):

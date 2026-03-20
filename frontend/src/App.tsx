@@ -33,14 +33,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const { isAuthenticated, fetchUser } = useAuthStore();
+  const { fetchUser } = useAuthStore();
   const { theme } = useThemeStore();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchUser();
-    }
-  }, [isAuthenticated, fetchUser]);
+    fetchUser();
+  }, [fetchUser]);
 
   const isDark = theme === "dark";
 

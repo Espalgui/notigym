@@ -31,7 +31,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false, // Déterminé par fetchUser au démarrage
-  isLoading: false,
+  isLoading: true,
 
   login: async (email, password, totpCode?) => {
     const payload: Record<string, string> = { email, password };

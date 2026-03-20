@@ -25,6 +25,7 @@ class User(Base):
     privacy: Mapped[str] = mapped_column(String(20), default="private", server_default="private")
     language: Mapped[str] = mapped_column(String(5), default="fr", server_default="fr")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     totp_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
     is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     backup_codes: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -18,6 +18,7 @@ import Activity from "@/pages/Activity";
 import Statistics from "@/pages/Statistics";
 import Profile from "@/pages/Profile";
 import TabataTimer from "@/pages/TabataTimer";
+import Admin from "@/pages/Admin";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -83,6 +84,7 @@ export default function App() {
           <Route path="nutrition" element={<Nutrition />} />
           <Route path="community" element={<Community />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="admin" element={<Admin />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

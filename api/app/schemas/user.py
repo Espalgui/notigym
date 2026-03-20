@@ -39,6 +39,7 @@ class UserResponse(BaseModel):
     privacy: str
     language: str
     is_active: bool
+    is_admin: bool = False
     is_2fa_enabled: bool = False
     created_at: datetime
     updated_at: datetime

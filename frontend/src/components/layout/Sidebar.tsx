@@ -19,6 +19,7 @@ import {
   Radio,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
+import { ShieldCheck } from "lucide-react";
 import { useThemeStore } from "@/stores/themeStore";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ const navItems = [
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { t } = useTranslation();
   const { logout, user } = useAuthStore();
+  const isAdmin = user?.is_admin ?? false;
   const { theme, toggle } = useThemeStore();
   const { canInstall, install } = usePWAInstall();
   const navigate = useNavigate();
@@ -120,6 +122,28 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           );
         })}
       </nav>
+
+      {/* Admin */}
+      {isAdmin && (
+        <div className="px-4 pb-1">
+          <NavLink
+            to="/admin"
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive
+                  ? "bg-onair-cyan/10 text-onair-cyan"
+                  : "text-onair-muted hover:text-onair-text hover:bg-onair-surface"
+              }`
+            }
+          >
+            <div className="p-1.5 rounded-lg bg-onair-cyan/10">
+              <ShieldCheck className="w-4 h-4 text-onair-cyan" />
+            </div>
+            <span>{t("admin.title")}</span>
+          </NavLink>
+        </div>
+      )}
 
       {/* Install PWA */}
       {canInstall && (

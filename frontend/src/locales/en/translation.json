@@ -200,6 +200,20 @@
       "general": "General"
     }
   },
+  "admin": {
+    "title": "Administration",
+    "users": "users",
+    "search": "Search a user...",
+    "inactive": "Inactive",
+    "activate": "Activate account",
+    "deactivate": "Deactivate account",
+    "activated": "Account activated",
+    "deactivated": "Account deactivated",
+    "resetPassword": "Reset password",
+    "passwordReset": "Temporary password generated",
+    "deleteUser": "Delete user",
+    "userDeleted": "User deleted"
+  },
   "hydration": {
     "reminder": "Hydration reminder",
     "reminderEvery": "Remind every"
@@ -438,6 +452,7 @@
   "common": {
     "save": "Save",
     "cancel": "Cancel",
+    "confirm": "Confirm",
     "delete": "Delete",
     "edit": "Edit",
     "loading": "Loading...",

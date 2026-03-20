@@ -26,10 +26,28 @@ export default function Admin() {
   const [tempPasswords, setTempPasswords] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
-    api.get("/admin/users").then((r) => setUsers(r.data)).catch(() => toast.error(t("common.error")));
+    api.get("/admin/users")
+      .then((r) => setUsers(r.data))
+      .catch((err) => {
+        if (err?.response?.status === 403 || err?.response?.status === 401) {
+          setForbidden(true);
+        } else {
+          toast.error(t("common.error"));
+        }
+      });
   }, []);
+
+  if (forbidden) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full py-24 text-center gap-4">
+        <p className="text-6xl font-display font-bold text-onair-muted/20">404</p>
+        <p className="text-onair-muted">Cette page n'existe pas.</p>
+      </div>
+    );
+  }
 
   const filtered = users.filter((u) =>
     `${u.first_name} ${u.last_name} ${u.email}`.toLowerCase().includes(search.toLowerCase())

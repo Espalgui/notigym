@@ -67,7 +67,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </div>
       </NavLink>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map(({ to, icon: Icon, key, accent }) => {
           const ACTIVE_CLASSES = {
             amber: "bg-amber-500/10 text-amber-400 shadow-sm",

@@ -3,16 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 from app.config import settings
 from app.database import Base, engine
+from app.limiter import limiter
 from app.routers import activity, auth, body, community, exercises, notifications, nutrition, stats, twofa, users, workouts
 from app.seed import seed_exercises
-
-limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager

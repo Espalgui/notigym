@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.jwt import create_access_token, create_refresh_token, verify_token
 from app.database import get_db
-from app.main import limiter
+from app.limiter import limiter
 from app.models.user import User
 from app.notifications import create_notification
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenResponse

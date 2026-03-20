@@ -78,7 +78,7 @@ export default function Community() {
     try {
       await api.post(`/community/posts/${commentPost}/comments`, { content: commentText });
       setCommentText("");
-      openComments(commentPost);
+      setCommentPost(null);
       fetchPosts();
     } catch {
       toast.error(t("common.error"));

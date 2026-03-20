@@ -10,6 +10,7 @@
     "body": "Body Tracking",
     "nutrition": "Nutrition",
     "community": "Community",
+    "notifications": "Notifications",
     "activity": "Activity",
     "statistics": "Statistics",
     "settings": "Settings",
@@ -447,7 +448,21 @@
     "justNow": "Just now",
     "minutesAgo": "{{count}} min ago",
     "hoursAgo": "{{count}} h ago",
-    "daysAgo": "{{count}} d ago"
+    "daysAgo": "{{count}} d ago",
+    "settings": {
+      "title": "Notifications",
+      "subtitle": "Manage your notification preferences",
+      "globalLabel": "Community notifications",
+      "globalOn": "Enabled — you receive new post notifications",
+      "globalOff": "Disabled — no community notifications",
+      "usersTitle": "Muted members",
+      "usersSubtitle": "Posts from these members won't send you notifications",
+      "noUsers": "No other members yet",
+      "muted": "Muted",
+      "notMuted": "Notifications active",
+      "mute": "Mute",
+      "unmute": "Unmute"
+    }
   },
   "common": {
     "save": "Save",

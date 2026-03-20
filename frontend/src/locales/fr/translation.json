@@ -10,6 +10,7 @@
     "body": "Suivi corporel",
     "nutrition": "Nutrition",
     "community": "Communauté",
+    "notifications": "Notifications",
     "activity": "Activité",
     "statistics": "Statistiques",
     "settings": "Paramètres",
@@ -447,7 +448,21 @@
     "justNow": "À l'instant",
     "minutesAgo": "il y a {{count}} min",
     "hoursAgo": "il y a {{count}} h",
-    "daysAgo": "il y a {{count}} j"
+    "daysAgo": "il y a {{count}} j",
+    "settings": {
+      "title": "Notifications",
+      "subtitle": "Gérez vos préférences de notifications",
+      "globalLabel": "Notifications communauté",
+      "globalOn": "Activées — vous recevez les nouvelles publications",
+      "globalOff": "Désactivées — aucune notification de la communauté",
+      "usersTitle": "Membres à ignorer",
+      "usersSubtitle": "Les publications de ces membres ne vous enverront pas de notification",
+      "noUsers": "Aucun autre membre pour le moment",
+      "muted": "Ignoré",
+      "notMuted": "Notifications actives",
+      "mute": "Ignorer",
+      "unmute": "Réactiver"
+    }
   },
   "common": {
     "save": "Enregistrer",

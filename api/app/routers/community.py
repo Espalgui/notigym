@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from app.auth.dependencies import get_current_active_user
 from app.database import get_db
 from app.models.community import CommunityPost, PostComment, PostLike
+from app.models.notification_mute import NotificationMute
 from app.models.user import User
 from app.notifications import create_notification
 from app.schemas.community import CommentCreate, CommentResponse, PostCreate, PostResponse
@@ -63,12 +64,17 @@ async def create_post(
     db.add(post)
     await db.flush()
 
-    # Notifier tous les autres utilisateurs actifs
-    other_users_result = await db.execute(
-        select(User.id).where(User.id != current_user.id)
+    # Notifier les utilisateurs qui ont les notifs activées et n'ont pas muté le posteur
+    muted_subquery = select(NotificationMute.user_id).where(
+        NotificationMute.muted_user_id == current_user.id
     )
-    other_user_ids = other_users_result.scalars().all()
-    for uid in other_user_ids:
+    other_users_result = await db.execute(
+        select(User.id)
+        .where(User.id != current_user.id)
+        .where(User.notifications_enabled == True)  # noqa: E712
+        .where(User.id.not_in(muted_subquery))
+    )
+    for uid in other_users_result.scalars().all():
         await create_notification(
             db,
             user_id=uid,

@@ -17,6 +17,7 @@ import {
   Download,
   Timer,
   Radio,
+  Bell,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { ShieldCheck } from "lucide-react";
@@ -38,6 +39,7 @@ const navItems = [
   { to: "/body", icon: Activity, key: "nav.body", accent: null },
   { to: "/nutrition", icon: Apple, key: "nav.nutrition", accent: null },
   { to: "/community", icon: Users, key: "nav.community", accent: null },
+  { to: "/notifications", icon: Bell, key: "nav.notifications", accent: null },
   { to: "/profile", icon: User, key: "nav.profile", accent: null },
 ];
 

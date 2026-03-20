@@ -19,3 +19,21 @@ class NotificationResponse(BaseModel):
 class NotificationCount(BaseModel):
     unread: int
     total: int
+
+
+class NotificationPreferences(BaseModel):
+    notifications_enabled: bool
+    muted_user_ids: list[uuid.UUID]
+
+
+class NotificationPreferencesUpdate(BaseModel):
+    notifications_enabled: bool
+
+
+class UserForNotification(BaseModel):
+    id: uuid.UUID
+    first_name: str
+    last_name: str
+    avatar_url: str | None = None
+
+    model_config = {"from_attributes": True}

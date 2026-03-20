@@ -1,26 +1,27 @@
 import uuid
 from datetime import date, datetime
+from typing import Literal
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str
-    first_name: str
-    last_name: str
-    language: str = "fr"
+    password: str = Field(min_length=8, max_length=128)
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    language: str = Field(default="fr", max_length=10)
 
 
 class UserUpdate(BaseModel):
-    first_name: str | None = None
-    last_name: str | None = None
+    first_name: str | None = Field(default=None, min_length=1, max_length=100)
+    last_name: str | None = Field(default=None, min_length=1, max_length=100)
     date_of_birth: date | None = None
-    height_cm: float | None = None
-    gender: str | None = None
-    goal: str | None = None
-    privacy: str | None = None
-    language: str | None = None
+    height_cm: float | None = Field(default=None, ge=50, le=300)
+    gender: Literal["male", "female", "other"] | None = None
+    goal: str | None = Field(default=None, max_length=500)
+    privacy: Literal["public", "private"] | None = None
+    language: str | None = Field(default=None, max_length=10)
 
 
 class UserResponse(BaseModel):

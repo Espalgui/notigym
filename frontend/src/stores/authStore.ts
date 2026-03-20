@@ -22,18 +22,18 @@ interface AuthState {
   isLoading: boolean;
   login: (email: string, password: string, totpCode?: string) => Promise<{ requires2FA?: boolean }>;
   register: (data: { email: string; password: string; first_name: string; last_name: string; language: string }) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   updateUser: (data: Partial<User>) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isAuthenticated: !!localStorage.getItem("access_token"),
+  isAuthenticated: false, // Déterminé par fetchUser au démarrage
   isLoading: false,
 
   login: async (email, password, totpCode?) => {
-    const payload: any = { email, password };
+    const payload: Record<string, string> = { email, password };
     if (totpCode) payload.totp_code = totpCode;
 
     const { data } = await api.post("/auth/login", payload);
@@ -42,8 +42,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       return { requires2FA: true };
     }
 
-    localStorage.setItem("access_token", data.access_token);
-    localStorage.setItem("refresh_token", data.refresh_token);
+    // Les tokens sont stockés en cookies HttpOnly par le serveur
     set({ isAuthenticated: true });
     const { data: user } = await api.get("/users/me");
     set({ user });
@@ -51,21 +50,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   register: async (registerData) => {
+    // Le register crée le compte et pose les cookies en une seule requête
     await api.post("/auth/register", registerData);
-    const { data } = await api.post("/auth/login", {
+    // Auto-login
+    await api.post("/auth/login", {
       email: registerData.email,
       password: registerData.password,
     });
-    localStorage.setItem("access_token", data.access_token);
-    localStorage.setItem("refresh_token", data.refresh_token);
     set({ isAuthenticated: true });
     const { data: user } = await api.get("/users/me");
     set({ user });
   },
 
-  logout: () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+  logout: async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // Nettoyage local même si l'API échoue
+    }
     set({ user: null, isAuthenticated: false });
   },
 
@@ -76,8 +78,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user: data, isAuthenticated: true });
     } catch {
       set({ user: null, isAuthenticated: false });
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
     } finally {
       set({ isLoading: false });
     }

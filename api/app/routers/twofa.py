@@ -5,12 +5,13 @@ import secrets
 
 import pyotp
 import qrcode
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
 from app.database import get_db
+from app.limiter import limiter
 from app.models.user import User
 from app.schemas.twofa import (
     TwoFADisableRequest,
@@ -71,7 +72,9 @@ async def twofa_setup(
 
 
 @router.post("/verify", response_model=TwoFAStatusResponse)
+@limiter.limit("5/minute")
 async def twofa_verify(
+    request: Request,
     body: TwoFAVerifyRequest,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
@@ -101,7 +104,9 @@ async def twofa_verify(
 
 
 @router.post("/disable", response_model=TwoFAStatusResponse)
+@limiter.limit("5/minute")
 async def twofa_disable(
+    request: Request,
     body: TwoFADisableRequest,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),

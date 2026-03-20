@@ -16,6 +16,7 @@ import {
   BarChart3,
   Download,
   Timer,
+  Radio,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
@@ -58,7 +59,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         onClick={onClose}
         className="p-6 flex items-center gap-3 hover:bg-onair-surface/50 transition-colors cursor-pointer"
       >
-        <img src="/notigym-icon.svg" alt="NotiGym" className="h-9 w-9" />
+        <Radio className="w-8 h-8 text-onair-red" />
+        <div>
+          <h1 className="text-xl font-display font-bold gradient-text">
+            NotiGym
+          </h1>
+        </div>
       </NavLink>
 
       <nav className="flex-1 px-3 py-4 space-y-1">

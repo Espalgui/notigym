@@ -134,10 +134,6 @@ export default function Dashboard() {
             </h1>
             <p className="text-onair-muted mt-1">{t("dashboard.title")}</p>
           </div>
-          <div className="hidden sm:flex onair-badge">
-            <span className="live-dot scale-75" />
-            <span>{t("dashboard.onAir")}</span>
-          </div>
         </div>
       </motion.div>
 

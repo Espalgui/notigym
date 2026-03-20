@@ -15,9 +15,11 @@ import {
   Sun,
   Moon,
   BarChart3,
+  Download,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -40,6 +42,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const { t } = useTranslation();
   const { logout, user } = useAuthStore();
   const { theme, toggle } = useThemeStore();
+  const { canInstall, install } = usePWAInstall();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -108,6 +111,23 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </NavLink>
         ))}
       </nav>
+
+      {/* Install PWA */}
+      {canInstall && (
+        <div className="px-4 pb-1">
+          <button
+            onClick={install}
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm
+                       text-onair-cyan hover:text-onair-text hover:bg-onair-surface
+                       transition-all duration-200 group"
+          >
+            <div className="p-1.5 rounded-lg bg-onair-cyan/10 group-hover:bg-onair-surface">
+              <Download className="w-4 h-4" />
+            </div>
+            <span>{t("nav.installApp")}</span>
+          </button>
+        </div>
+      )}
 
       {/* Theme Toggle */}
       <div className="px-4 pb-2">

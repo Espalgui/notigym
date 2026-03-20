@@ -13,7 +13,8 @@
     "statistics": "Statistiques",
     "settings": "Paramètres",
     "profile": "Profil",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "installApp": "Installer l'app"
   },
   "auth": {
     "login": "Connexion",
@@ -143,8 +144,8 @@
     "photoDeleted": "Photo supprimée",
     "dragOrClick": "Glissez une image ou cliquez pour sélectionner",
     "maxSize": "JPEG, PNG ou WebP — max {{size}} Mo",
-    "selectBefore": "Sélectionnez la photo «\u00a0Avant\u00a0»",
-    "selectAfter": "Sélectionnez la photo «\u00a0Après\u00a0»",
+    "selectBefore": "Sélectionnez la photo « Avant »",
+    "selectAfter": "Sélectionnez la photo « Après »",
     "before": "Avant",
     "after": "Après",
     "slideToCompare": "Glissez pour comparer",

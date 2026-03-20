@@ -13,7 +13,8 @@
     "statistics": "Statistics",
     "settings": "Settings",
     "profile": "Profile",
-    "logout": "Logout"
+    "logout": "Logout",
+    "installApp": "Install app"
   },
   "auth": {
     "login": "Login",

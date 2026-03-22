@@ -73,6 +73,7 @@
     "currentWeight": "Current Weight",
     "goalWeight": "Goal",
     "sessionsWeek": "Sessions this week",
+    "durationWeek": "Time this week",
     "sessionsMonth": "Sessions this month",
     "totalVolume": "Total Volume",
     "streak": "Current Streak",
@@ -102,6 +103,14 @@
     "programType": "Program Type",
     "addDay": "Add Day",
     "addExercise": "Add Exercise",
+    "exerciseCreated": "Exercise created!",
+    "customExercise": {
+      "create": "+ Create exercise",
+      "nameFr": "Name (FR)",
+      "nameEn": "Name (EN)",
+      "muscleGroup": "Muscle group",
+      "category": "Category"
+    },
     "sets": "Sets",
     "reps": "Reps",
     "weight": "Weight (kg)",
@@ -197,7 +206,16 @@
       "snack": "Snack"
     },
     "remaining": "remaining",
-    "setGoals": "Set Goals"
+    "setGoals": "Set Goals",
+    "tabs": {
+      "journal": "Journal",
+      "recipes": "Recipes"
+    },
+    "recipes": {
+      "title": "Keto Recipes",
+      "recommended": "Recommended for you",
+      "addToLog": "Add to log"
+    }
   },
   "community": {
     "title": "Community",
@@ -242,6 +260,10 @@
     "restDuration": "Rest duration (s)",
     "rounds": "Rounds",
     "prepTime": "Preparation (s)",
+    "sessionName": "Session name",
+    "sessionNamePlaceholder": "E.g.: Intense cardio",
+    "presets": "My presets",
+    "savePreset": "Save this preset",
     "exercises": "Exercises (one per line)",
     "start": "Start",
     "pause": "Pause",
@@ -465,12 +487,22 @@
     "minutesAgo": "{{count}} min ago",
     "hoursAgo": "{{count}} h ago",
     "daysAgo": "{{count}} d ago",
+    "tabs": {
+      "all": "All",
+      "program": "Program",
+      "community": "Community"
+    },
     "settings": {
       "title": "Notifications",
       "subtitle": "Manage your notification preferences",
-      "globalLabel": "Community notifications",
-      "globalOn": "Enabled — you receive new post notifications",
-      "globalOff": "Disabled — no community notifications",
+      "globalLabel": "All notifications",
+      "globalOn": "Enabled — you receive all notifications",
+      "globalOff": "Disabled — no notifications",
+      "categories": "Categories",
+      "programLabel": "Program",
+      "programDesc": "Completed sessions, nutrition reminders",
+      "communityLabel": "Community",
+      "communityDesc": "Likes, comments, new posts",
       "usersTitle": "Muted members",
       "usersSubtitle": "Posts from these members won't send you notifications",
       "noUsers": "No other members yet",
@@ -498,6 +530,7 @@
     "min": "min",
     "search": "Search...",
     "lightMode": "Light Mode",
-    "darkMode": "Dark Mode"
+    "darkMode": "Dark Mode",
+    "all": "All"
   }
 }

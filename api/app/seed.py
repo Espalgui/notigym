@@ -173,6 +173,17 @@ EXERCISES: list[dict] = [
     {"name_key": "exercise.leg_raise", "name_en": "Lying Leg Raise", "name_fr": "Relevé de jambes allongé", "muscle_group": "abs", "category": "bodyweight", "is_compound": False},
     {"name_key": "exercise.decline_crunch", "name_en": "Decline Crunch", "name_fr": "Crunch décliné", "muscle_group": "abs", "category": "bodyweight", "is_compound": False},
 
+    # ─── Isometric (Isométrie) ─────────────────────────────────
+    {"name_key": "exercise.hollow_hold", "name_en": "Hollow Hold", "name_fr": "Hollow Hold", "muscle_group": "abs", "category": "bodyweight", "is_compound": False},
+    {"name_key": "exercise.glute_bridge_hold", "name_en": "Glute Bridge Hold", "name_fr": "Pont fessier statique", "muscle_group": "glutes", "category": "bodyweight", "is_compound": False},
+    {"name_key": "exercise.superman_hold", "name_en": "Superman Hold", "name_fr": "Superman statique", "muscle_group": "back", "category": "bodyweight", "is_compound": False},
+    {"name_key": "exercise.copenhagen_plank", "name_en": "Copenhagen Plank", "name_fr": "Planche Copenhague", "muscle_group": "abs", "category": "bodyweight", "is_compound": False},
+    {"name_key": "exercise.horse_stance", "name_en": "Horse Stance", "name_fr": "Posture du cavalier", "muscle_group": "quads", "category": "bodyweight", "is_compound": False},
+    {"name_key": "exercise.forearm_plank", "name_en": "Forearm Plank", "name_fr": "Planche sur avant-bras", "muscle_group": "abs", "category": "bodyweight", "is_compound": False},
+    {"name_key": "exercise.prayer_hold", "name_en": "Prayer Hold", "name_fr": "Prayer Hold", "muscle_group": "chest", "category": "bodyweight", "is_compound": False},
+    {"name_key": "exercise.iso_curl_hold", "name_en": "Isometric Curl Hold", "name_fr": "Curl isométrique", "muscle_group": "biceps", "category": "bodyweight", "is_compound": False},
+    {"name_key": "exercise.hang_hold", "name_en": "Hang Hold (Traction Hold)", "name_fr": "Traction Hold", "muscle_group": "back", "category": "bodyweight", "is_compound": False},
+
     # ─── Forearms (Avant-bras) ──────────────────────────────────
     {"name_key": "exercise.wrist_curl", "name_en": "Wrist Curl", "name_fr": "Curl poignet", "muscle_group": "forearms", "category": "dumbbell", "is_compound": False},
     {"name_key": "exercise.reverse_wrist_curl", "name_en": "Reverse Wrist Curl", "name_fr": "Curl poignet inversé", "muscle_group": "forearms", "category": "dumbbell", "is_compound": False},

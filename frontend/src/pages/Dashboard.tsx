@@ -6,7 +6,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart,
 } from "recharts";
 import {
-  Dumbbell, Scale, Apple, TrendingUp, Flame, Target, ChevronRight, Zap,
+  Dumbbell, Scale, Apple, TrendingUp, Flame, Target, ChevronRight, Zap, Clock,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
@@ -20,6 +20,7 @@ interface WorkoutStats {
   avg_session_duration_min: number | null;
   sessions_this_week: number;
   sessions_this_month: number;
+  total_duration_this_week: number;
 }
 
 interface Measurement {
@@ -97,6 +98,13 @@ export default function Dashboard() {
       value: stats?.sessions_this_week ?? 0,
       color: "text-onair-amber",
       gradient: "from-onair-amber/15 to-transparent",
+    },
+    {
+      icon: Clock,
+      label: t("dashboard.durationWeek"),
+      value: stats ? `${Math.round(stats.total_duration_this_week)}min` : "0min",
+      color: "text-onair-red",
+      gradient: "from-onair-red/15 to-transparent",
     },
     {
       icon: Target,

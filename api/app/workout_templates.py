@@ -483,6 +483,107 @@ TEMPLATES: list[dict[str, Any]] = [
             },
         ],
     },
+    # ─────────────────────────────────────────────────────────────
+    # ISOMÉTRIE
+    # ─────────────────────────────────────────────────────────────
+    {
+        "id": "isometric_fullbody",
+        "name_fr": "Isométrie – Full Body",
+        "name_en": "Isometric – Full Body",
+        "description_fr": "Programme isométrique 3 jours. Maintiens statiques pour renforcer tendons, stabilité et gainage profond. Reps = secondes de maintien.",
+        "description_en": "3-day isometric program. Static holds to strengthen tendons, stability and deep core. Reps = hold seconds.",
+        "program_type": "full_body",
+        "days_per_week": 3,
+        "goals": ["maintain", "recomp", "strength"],
+        "training_types": ["isometrie", "poids_corps"],
+        "genders": [],
+        "days": [
+            {
+                "name_fr": "Jour 1 – Gainage & Abdos",
+                "name_en": "Day 1 – Core & Abs",
+                "exercises": [
+                    {"name_key": "exercise.plank",             "sets": 3, "reps_min": 30, "reps_max": 60, "rest_seconds": 60, "notes": "secondes de maintien"},
+                    {"name_key": "exercise.side_plank",        "sets": 3, "reps_min": 20, "reps_max": 45, "rest_seconds": 60, "notes": "secondes par côté"},
+                    {"name_key": "exercise.hollow_hold",       "sets": 3, "reps_min": 20, "reps_max": 45, "rest_seconds": 60, "notes": "secondes de maintien"},
+                    {"name_key": "exercise.copenhagen_plank",  "sets": 3, "reps_min": 15, "reps_max": 30, "rest_seconds": 60, "notes": "secondes par côté"},
+                    {"name_key": "exercise.superman_hold",     "sets": 3, "reps_min": 20, "reps_max": 40, "rest_seconds": 60, "notes": "secondes de maintien"},
+                ],
+            },
+            {
+                "name_fr": "Jour 2 – Bas du corps",
+                "name_en": "Day 2 – Lower Body",
+                "exercises": [
+                    {"name_key": "exercise.wall_sit",          "sets": 3, "reps_min": 30, "reps_max": 60, "rest_seconds": 90, "notes": "secondes de maintien"},
+                    {"name_key": "exercise.horse_stance",      "sets": 3, "reps_min": 20, "reps_max": 45, "rest_seconds": 90, "notes": "secondes de maintien"},
+                    {"name_key": "exercise.glute_bridge_hold", "sets": 3, "reps_min": 30, "reps_max": 60, "rest_seconds": 60, "notes": "secondes de maintien"},
+                    {"name_key": "exercise.l_sit",             "sets": 3, "reps_min": 10, "reps_max": 30, "rest_seconds": 90, "notes": "secondes de maintien"},
+                    {"name_key": "exercise.plank",             "sets": 3, "reps_min": 30, "reps_max": 60, "rest_seconds": 60, "notes": "secondes de maintien"},
+                ],
+            },
+            {
+                "name_fr": "Jour 3 – Haut du corps & Grip",
+                "name_en": "Day 3 – Upper Body & Grip",
+                "exercises": [
+                    {"name_key": "exercise.dead_hang",         "sets": 3, "reps_min": 20, "reps_max": 60, "rest_seconds": 90, "notes": "secondes de maintien"},
+                    {"name_key": "exercise.push_up",           "sets": 3, "reps_min": 15, "reps_max": 30, "rest_seconds": 60, "notes": "secondes en position basse (isométrique)"},
+                    {"name_key": "exercise.plank",             "sets": 3, "reps_min": 45, "reps_max": 90, "rest_seconds": 60, "notes": "secondes de maintien"},
+                    {"name_key": "exercise.side_plank",        "sets": 3, "reps_min": 20, "reps_max": 45, "rest_seconds": 60, "notes": "secondes par côté"},
+                    {"name_key": "exercise.hollow_hold",       "sets": 3, "reps_min": 20, "reps_max": 45, "rest_seconds": 60, "notes": "secondes de maintien"},
+                ],
+            },
+        ],
+    },
+
+    # ─────────────────────────────────────────────────────────────
+    # ISOMÉTRIE ADAPTÉ (handicap / SEP / récupération)
+    # ─────────────────────────────────────────────────────────────
+    {
+        "id": "isometric_adapted",
+        "name_fr": "Isométrie Adaptée – Minimaliste",
+        "name_en": "Adapted Isometric – Minimalist",
+        "description_fr": "Programme isométrique adapté pour personnes à mobilité réduite ou pathologies neurologiques (SEP, etc.). 3 séances courtes (15-20 min), 1 seule série longue par exercice. Priorité récupération et stabilité nerveuse. Compatible régime cétogène.",
+        "description_en": "Adapted isometric program for people with reduced mobility or neurological conditions (MS, etc.). 3 short sessions (15-20 min), 1 long set per exercise. Recovery and nervous stability first. Keto-compatible.",
+        "program_type": "full_body",
+        "days_per_week": 3,
+        "goals": ["maintain", "recomp"],
+        "training_types": ["isometrie", "poids_corps"],
+        "genders": [],
+        "days": [
+            {
+                "name_fr": "Séance 1 – Standard",
+                "name_en": "Session 1 – Standard",
+                "exercises": [
+                    {"name_key": "exercise.plank",          "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – RPE 6-7, jamais à l'échec"},
+                    {"name_key": "exercise.wall_sit",       "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – respiration contrôlée"},
+                    {"name_key": "exercise.prayer_hold",    "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – paumes pressées devant la poitrine"},
+                    {"name_key": "exercise.superman_hold",  "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – pas de tremblement excessif"},
+                    {"name_key": "exercise.iso_curl_hold",  "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – bras à 90°"},
+                ],
+            },
+            {
+                "name_fr": "Séance 2 – Standard",
+                "name_en": "Session 2 – Standard",
+                "exercises": [
+                    {"name_key": "exercise.plank",          "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – RPE 6-7, jamais à l'échec"},
+                    {"name_key": "exercise.wall_sit",       "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – respiration contrôlée"},
+                    {"name_key": "exercise.prayer_hold",    "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – paumes pressées devant la poitrine"},
+                    {"name_key": "exercise.superman_hold",  "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – pas de tremblement excessif"},
+                    {"name_key": "exercise.iso_curl_hold",  "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – bras à 90°"},
+                ],
+            },
+            {
+                "name_fr": "Séance 3 – Variation (samedi)",
+                "name_en": "Session 3 – Variation (Saturday)",
+                "exercises": [
+                    {"name_key": "exercise.forearm_plank",  "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes – planche sur avant-bras, focus stabilité"},
+                    {"name_key": "exercise.wall_sit",       "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – respiration contrôlée"},
+                    {"name_key": "exercise.prayer_hold",    "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – paumes pressées devant la poitrine"},
+                    {"name_key": "exercise.superman_hold",  "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes de maintien – contrôle maximal"},
+                    {"name_key": "exercise.hang_hold",      "sets": 1, "reps_min": 30, "reps_max": 120, "rest_seconds": 60, "notes": "secondes – traction hold, remplace iso curl, focus grip et dos"},
+                ],
+            },
+        ],
+    },
 ]
 
 

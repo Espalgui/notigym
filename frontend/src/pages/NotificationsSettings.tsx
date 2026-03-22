@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Bell, BellOff, VolumeX, Volume2 } from "lucide-react";
+import { Bell, BellOff, VolumeX, Volume2, Dumbbell, Users } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 
@@ -12,6 +12,8 @@ interface UserForNotification {
 
 interface Preferences {
   notifications_enabled: boolean;
+  notif_program_enabled: boolean;
+  notif_community_enabled: boolean;
   muted_user_ids: string[];
 }
 
@@ -48,6 +50,19 @@ export default function NotificationsSettings() {
       toast.error(t("common.error"));
     } finally {
       setTogglingGlobal(false);
+    }
+  };
+
+  const toggleCategory = async (category: "notif_program_enabled" | "notif_community_enabled") => {
+    if (!prefs) return;
+    try {
+      const res = await api.put<Preferences>("/notifications/preferences", {
+        notifications_enabled: prefs.notifications_enabled,
+        [category]: !prefs[category],
+      });
+      setPrefs(res.data);
+    } catch {
+      toast.error(t("common.error"));
     }
   };
 
@@ -139,6 +154,41 @@ export default function NotificationsSettings() {
           </button>
         </div>
       </div>
+
+      {/* Category toggles */}
+      {prefs.notifications_enabled && (
+        <div className="card space-y-4">
+          <h2 className="text-sm font-semibold text-onair-text">
+            {t("notifications.settings.categories")}
+          </h2>
+          {([
+            { key: "notif_program_enabled" as const, icon: Dumbbell, label: t("notifications.settings.programLabel"), desc: t("notifications.settings.programDesc") },
+            { key: "notif_community_enabled" as const, icon: Users, label: t("notifications.settings.communityLabel"), desc: t("notifications.settings.communityDesc") },
+          ]).map(({ key, icon: Icon, label, desc }) => (
+            <div key={key} className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl ${prefs[key] ? "bg-onair-cyan/10 text-onair-cyan" : "bg-onair-surface text-onair-muted"}`}>
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-onair-text">{label}</p>
+                  <p className="text-xs text-onair-muted mt-0.5">{desc}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => toggleCategory(key)}
+                className={`relative w-12 h-6 rounded-full transition-colors duration-200 flex-shrink-0 ${
+                  prefs[key] ? "bg-onair-cyan" : "bg-onair-border"
+                }`}
+              >
+                <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200 ${
+                  prefs[key] ? "left-6" : "left-0.5"
+                }`} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Liste des utilisateurs */}
       <div className="space-y-3">

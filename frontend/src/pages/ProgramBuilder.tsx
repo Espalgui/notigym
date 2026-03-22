@@ -44,6 +44,11 @@ export default function ProgramBuilder() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showExerciseModal, setShowExerciseModal] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showCreateExercise, setShowCreateExercise] = useState(false);
+  const [newExercise, setNewExercise] = useState({
+    name_fr: "", name_en: "", muscle_group: "chest", category: "bodyweight",
+  });
+  const [creatingExercise, setCreatingExercise] = useState(false);
 
   useEffect(() => {
     api.get("/exercises?limit=500").then((r) => setExerciseLib(r.data)).catch(() => {});
@@ -146,6 +151,22 @@ export default function ProgramBuilder() {
       toast.error(t("common.error"));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCreateExercise = async () => {
+    if (!newExercise.name_fr.trim() || !newExercise.name_en.trim()) return;
+    setCreatingExercise(true);
+    try {
+      const { data } = await api.post("/exercises", newExercise);
+      setExerciseLib((prev) => [...prev, data]);
+      setNewExercise({ name_fr: "", name_en: "", muscle_group: "chest", category: "bodyweight" });
+      setShowCreateExercise(false);
+      toast.success(t("workouts.exerciseCreated"));
+    } catch {
+      toast.error(t("common.error"));
+    } finally {
+      setCreatingExercise(false);
     }
   };
 
@@ -283,6 +304,49 @@ export default function ProgramBuilder() {
                 {t("common.cancel")}
               </button>
             </div>
+            {showCreateExercise ? (
+              <div className="space-y-3 p-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-onair-muted">{t("workouts.customExercise.nameFr")}</label>
+                    <input value={newExercise.name_fr} onChange={(e) => setNewExercise({ ...newExercise, name_fr: e.target.value })} className="w-full text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-onair-muted">{t("workouts.customExercise.nameEn")}</label>
+                    <input value={newExercise.name_en} onChange={(e) => setNewExercise({ ...newExercise, name_en: e.target.value })} className="w-full text-sm" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-onair-muted">{t("workouts.customExercise.muscleGroup")}</label>
+                    <select value={newExercise.muscle_group} onChange={(e) => setNewExercise({ ...newExercise, muscle_group: e.target.value })} className="w-full text-sm">
+                      {["chest","back","shoulders","biceps","triceps","quads","hamstrings","glutes","calves","abs","forearms","cardio","full_body"].map((g) => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-onair-muted">{t("workouts.customExercise.category")}</label>
+                    <select value={newExercise.category} onChange={(e) => setNewExercise({ ...newExercise, category: e.target.value })} className="w-full text-sm">
+                      {["barbell","dumbbell","cable","machine","bodyweight","cardio","stretching"].map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowCreateExercise(false)} className="btn-ghost text-sm flex-1">{t("common.cancel")}</button>
+                  <button onClick={handleCreateExercise} disabled={creatingExercise} className="btn-primary text-sm flex-1">{t("common.save")}</button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowCreateExercise(true)}
+                className="w-full text-left p-3 rounded-lg bg-onair-surface/50 hover:bg-onair-surface transition-colors flex items-center gap-2 text-onair-cyan text-sm font-medium mb-2"
+              >
+                <Plus className="w-4 h-4" /> {t("workouts.customExercise.create")}
+              </button>
+            )}
             <div className="flex-1 overflow-auto space-y-1">
               {filteredExercises.slice(0, 50).map((ex) => (
                 <button

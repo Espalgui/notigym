@@ -164,7 +164,7 @@ export default function Activity() {
         const fieldName = f.field || f.key;
         const val = form[fieldName];
         if (val !== "") {
-          payload[fieldName] = f.type === "float" ? parseFloat(val) : parseInt(val, 10);
+          payload[fieldName] = f.type === "float" ? parseFloat(String(val).replace(",", ".")) : parseInt(val, 10);
         }
       });
       if (form.notes.trim()) payload.notes = form.notes.trim();
@@ -331,11 +331,18 @@ export default function Activity() {
                         {f.suffix && <span className="text-xs opacity-60">({f.suffix})</span>}
                       </label>
                       <input
-                        type="number"
+                        type={f.type === "float" ? "text" : "number"}
+                        inputMode={f.type === "float" ? "decimal" : "numeric"}
                         step={f.type === "float" ? "0.1" : "1"}
                         min="0"
                         value={form[fieldName]}
-                        onChange={(e) => setForm((prev) => ({ ...prev, [fieldName]: e.target.value }))}
+                        onChange={(e) => {
+                          let v = e.target.value;
+                          if (f.type === "float") {
+                            v = v.replace(/[^0-9.,]/g, "");
+                          }
+                          setForm((prev) => ({ ...prev, [fieldName]: v }));
+                        }}
                         placeholder="—"
                         className="w-full text-lg font-semibold bg-transparent border-none outline-none
                                    text-onair-text placeholder:text-onair-border focus:ring-0 p-0"

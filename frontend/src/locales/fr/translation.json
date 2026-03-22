@@ -73,6 +73,7 @@
     "currentWeight": "Poids actuel",
     "goalWeight": "Objectif",
     "sessionsWeek": "Séances cette semaine",
+    "durationWeek": "Temps cette semaine",
     "sessionsMonth": "Séances ce mois",
     "totalVolume": "Volume total",
     "streak": "Série en cours",
@@ -102,6 +103,14 @@
     "programType": "Type de programme",
     "addDay": "Ajouter un jour",
     "addExercise": "Ajouter un exercice",
+    "exerciseCreated": "Exercice créé !",
+    "customExercise": {
+      "create": "+ Créer un exercice",
+      "nameFr": "Nom (FR)",
+      "nameEn": "Nom (EN)",
+      "muscleGroup": "Groupe musculaire",
+      "category": "Catégorie"
+    },
     "sets": "Séries",
     "reps": "Répétitions",
     "weight": "Charge (kg)",
@@ -197,7 +206,16 @@
       "snack": "Collation"
     },
     "remaining": "restant",
-    "setGoals": "Définir les objectifs"
+    "setGoals": "Définir les objectifs",
+    "tabs": {
+      "journal": "Journal",
+      "recipes": "Recettes"
+    },
+    "recipes": {
+      "title": "Recettes cétogènes",
+      "recommended": "Recommandées pour toi",
+      "addToLog": "Ajouter au journal"
+    }
   },
   "community": {
     "title": "Communauté",
@@ -242,6 +260,10 @@
     "restDuration": "Durée repos (s)",
     "rounds": "Rounds",
     "prepTime": "Préparation (s)",
+    "sessionName": "Nom de la session",
+    "sessionNamePlaceholder": "Ex: Cardio intense",
+    "presets": "Mes presets",
+    "savePreset": "Sauvegarder ce preset",
     "exercises": "Exercices (un par ligne)",
     "start": "Démarrer",
     "pause": "Pause",
@@ -465,12 +487,22 @@
     "minutesAgo": "il y a {{count}} min",
     "hoursAgo": "il y a {{count}} h",
     "daysAgo": "il y a {{count}} j",
+    "tabs": {
+      "all": "Tous",
+      "program": "Programme",
+      "community": "Communauté"
+    },
     "settings": {
       "title": "Notifications",
       "subtitle": "Gérez vos préférences de notifications",
-      "globalLabel": "Notifications communauté",
-      "globalOn": "Activées — vous recevez les nouvelles publications",
-      "globalOff": "Désactivées — aucune notification de la communauté",
+      "globalLabel": "Toutes les notifications",
+      "globalOn": "Activées — vous recevez toutes les notifications",
+      "globalOff": "Désactivées — aucune notification",
+      "categories": "Catégories",
+      "programLabel": "Programme",
+      "programDesc": "Séances terminées, rappels nutrition",
+      "communityLabel": "Communauté",
+      "communityDesc": "Likes, commentaires, nouveaux posts",
       "usersTitle": "Membres à ignorer",
       "usersSubtitle": "Les publications de ces membres ne vous enverront pas de notification",
       "noUsers": "Aucun autre membre pour le moment",
@@ -498,6 +530,7 @@
     "min": "min",
     "search": "Rechercher...",
     "lightMode": "Mode clair",
-    "darkMode": "Mode sombre"
+    "darkMode": "Mode sombre",
+    "all": "Tous"
   }
 }

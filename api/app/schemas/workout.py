@@ -180,3 +180,4 @@ class WorkoutStats(BaseModel):
     avg_session_duration_min: float | None = None
     sessions_this_week: int = 0
     sessions_this_month: int = 0
+    total_duration_this_week: float = 0.0

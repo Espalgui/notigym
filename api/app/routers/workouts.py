@@ -524,6 +524,12 @@ async def get_workout_stats(
     )
     sessions_month = month_result.scalar() or 0
 
+    week_duration_result = await db.execute(
+        select(func.coalesce(func.sum(WorkoutSession.duration_minutes), 0))
+        .where(*completed_filter, WorkoutSession.started_at >= week_ago, WorkoutSession.duration_minutes.isnot(None))
+    )
+    total_duration_week = week_duration_result.scalar() or 0.0
+
     return WorkoutStats(
         total_sessions=total_sessions,
         total_sets=total_sets,
@@ -531,6 +537,7 @@ async def get_workout_stats(
         avg_session_duration_min=round(float(avg_duration), 1) if avg_duration else None,
         sessions_this_week=sessions_week,
         sessions_this_month=sessions_month,
+        total_duration_this_week=round(float(total_duration_week), 1),
     )
 
 
@@ -618,6 +625,8 @@ async def import_template(
                 reps_min=ex_data["reps_min"],
                 reps_max=ex_data["reps_max"],
                 rest_seconds=ex_data["rest_seconds"],
+                notes=ex_data.get("notes"),
+                tempo=ex_data.get("tempo"),
             )
             db.add(pe)
 

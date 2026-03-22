@@ -4,9 +4,10 @@ import { motion } from "framer-motion";
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
 } from "recharts";
-import { Apple, Plus, Droplets, Target } from "lucide-react";
+import { Apple, Plus, Droplets, Target, ChefHat, Star } from "lucide-react";
 import api from "@/lib/api";
 import { useThemeStore } from "@/stores/themeStore";
+import { useAuthStore } from "@/stores/authStore";
 import toast from "react-hot-toast";
 import { useHydrationReminder } from "@/hooks/useHydrationReminder";
 
@@ -28,10 +29,29 @@ interface WaterSummary {
   entries: { id: string; amount_ml: number; created_at: string }[];
 }
 
+interface Recipe {
+  id: string;
+  name_fr: string;
+  name_en: string;
+  meal_type: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  description_fr: string;
+  description_en: string;
+  goals: string[];
+}
+
 export default function Nutrition() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { user } = useAuthStore();
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState(today);
+  const [activeTab, setActiveTab] = useState<"journal" | "recipes">("journal");
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipeFilter, setRecipeFilter] = useState<string>("");
   const [summary, setSummary] = useState<NutritionSummary | null>(null);
   const [waterSummary, setWaterSummary] = useState<WaterSummary | null>(null);
   const [showAddEntry, setShowAddEntry] = useState(false);
@@ -55,6 +75,34 @@ export default function Nutrition() {
   };
 
   useEffect(() => { fetchSummary(); fetchWater(); }, [date]);
+
+  useEffect(() => {
+    api.get("/nutrition/recipes").then((r) => setRecipes(r.data)).catch(() => {});
+  }, []);
+
+  const handleAddRecipe = async (recipe: Recipe) => {
+    try {
+      await api.post("/nutrition/entries", {
+        date,
+        meal_type: recipe.meal_type,
+        food_name: lang === "fr" ? recipe.name_fr : recipe.name_en,
+        calories: recipe.calories,
+        protein_g: recipe.protein_g,
+        carbs_g: recipe.carbs_g,
+        fat_g: recipe.fat_g,
+      });
+      toast.success(t("common.success"));
+      fetchSummary();
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
+
+  const userGoal = (user as any)?.goal || "";
+  const recommendedRecipes = recipes.filter((r) => userGoal && r.goals.includes(userGoal));
+  const filteredRecipes = recipeFilter
+    ? recipes.filter((r) => r.meal_type === recipeFilter)
+    : recipes;
 
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +180,24 @@ export default function Nutrition() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 bg-onair-surface rounded-xl w-fit">
+        {(["journal", "recipes"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === tab
+                ? "bg-onair-card text-onair-text shadow-sm"
+                : "text-onair-muted hover:text-onair-text"
+            }`}
+          >
+            {t(`nutrition.tabs.${tab}`)}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "journal" && (<>
       <div className="flex items-center gap-4">
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="text-sm" />
       </div>
@@ -293,6 +359,86 @@ export default function Nutrition() {
           </div>
         )}
       </div>
+
+      </>)}
+
+      {activeTab === "recipes" && (
+        <div className="space-y-6">
+          {/* Recommended section */}
+          {recommendedRecipes.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Star className="w-5 h-5 text-onair-amber" />
+                <h2 className="font-display font-semibold">{t("nutrition.recipes.recommended")}</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {recommendedRecipes.slice(0, 4).map((r) => (
+                  <div key={r.id} className="card p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-sm">{lang === "fr" ? r.name_fr : r.name_en}</h3>
+                      <span className="text-xs text-onair-muted px-2 py-0.5 bg-onair-surface rounded-full">
+                        {t(`nutrition.mealTypes.${r.meal_type}` as any)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-onair-muted">{lang === "fr" ? r.description_fr : r.description_en}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono text-onair-amber">{r.calories} kcal</span>
+                      <span className="text-xs text-onair-muted">
+                        P: {r.protein_g}g / C: {r.carbs_g}g / F: {r.fat_g}g
+                      </span>
+                    </div>
+                    <button onClick={() => handleAddRecipe(r)} className="btn-primary text-xs w-full py-1.5">
+                      <Plus className="w-3 h-3 inline mr-1" />{t("nutrition.recipes.addToLog")}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Filter by meal type */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <ChefHat className="w-5 h-5 text-onair-cyan" />
+            <h2 className="font-display font-semibold mr-2">{t("nutrition.recipes.title")}</h2>
+            {["", "breakfast", "lunch", "dinner", "snack"].map((f) => (
+              <button
+                key={f}
+                onClick={() => setRecipeFilter(f)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                  recipeFilter === f
+                    ? "bg-onair-cyan text-white"
+                    : "bg-onair-surface text-onair-muted hover:text-onair-text"
+                }`}
+              >
+                {f ? t(`nutrition.mealTypes.${f}` as any) : t("common.all")}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {filteredRecipes.map((r) => (
+              <div key={r.id} className="card p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-sm">{lang === "fr" ? r.name_fr : r.name_en}</h3>
+                  <span className="text-xs text-onair-muted px-2 py-0.5 bg-onair-surface rounded-full">
+                    {t(`nutrition.mealTypes.${r.meal_type}` as any)}
+                  </span>
+                </div>
+                <p className="text-xs text-onair-muted">{lang === "fr" ? r.description_fr : r.description_en}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono text-onair-amber">{r.calories} kcal</span>
+                  <span className="text-xs text-onair-muted">
+                    P: {r.protein_g}g / C: {r.carbs_g}g / F: {r.fat_g}g
+                  </span>
+                </div>
+                <button onClick={() => handleAddRecipe(r)} className="btn-primary text-xs w-full py-1.5">
+                  <Plus className="w-3 h-3 inline mr-1" />{t("nutrition.recipes.addToLog")}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Add Entry Modal */}
       {showAddEntry && (

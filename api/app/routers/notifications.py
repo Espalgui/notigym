@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.notification import Notification
 from app.models.notification_mute import NotificationMute
 from app.models.user import User
+from app.notifications import PROGRAM_TYPES, COMMUNITY_TYPES
 from app.schemas.notification import (
     NotificationCount,
     NotificationPreferences,
@@ -24,12 +25,17 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 async def list_notifications(
     limit: int = 30,
     unread_only: bool = False,
+    category: str | None = Query(None, description="Filter by 'program' or 'community'"),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
     query = select(Notification).where(Notification.user_id == current_user.id)
     if unread_only:
         query = query.where(Notification.is_read == False)  # noqa: E712
+    if category == "program":
+        query = query.where(Notification.type.in_(PROGRAM_TYPES))
+    elif category == "community":
+        query = query.where(Notification.type.in_(COMMUNITY_TYPES))
     query = query.order_by(Notification.created_at.desc()).limit(limit)
     result = await db.execute(query)
     return result.scalars().all()
@@ -124,6 +130,8 @@ async def get_preferences(
     )
     return NotificationPreferences(
         notifications_enabled=current_user.notifications_enabled,
+        notif_program_enabled=current_user.notif_program_enabled,
+        notif_community_enabled=current_user.notif_community_enabled,
         muted_user_ids=mutes.scalars().all(),
     )
 
@@ -135,6 +143,10 @@ async def update_preferences(
     db: AsyncSession = Depends(get_db),
 ):
     current_user.notifications_enabled = data.notifications_enabled
+    if data.notif_program_enabled is not None:
+        current_user.notif_program_enabled = data.notif_program_enabled
+    if data.notif_community_enabled is not None:
+        current_user.notif_community_enabled = data.notif_community_enabled
     await db.flush()
     mutes = await db.execute(
         select(NotificationMute.muted_user_id).where(
@@ -143,6 +155,8 @@ async def update_preferences(
     )
     return NotificationPreferences(
         notifications_enabled=current_user.notifications_enabled,
+        notif_program_enabled=current_user.notif_program_enabled,
+        notif_community_enabled=current_user.notif_community_enabled,
         muted_user_ids=mutes.scalars().all(),
     )
 

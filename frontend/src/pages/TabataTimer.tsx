@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, ChevronUp, RotateCcw, Play, Pause } from "lucide-react";
+import { ChevronDown, ChevronUp, RotateCcw, Play, Pause, Save, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TabataConfig {
+  name: string;
   workSeconds: number;
   restSeconds: number;
   rounds: number;
@@ -11,15 +12,27 @@ interface TabataConfig {
   exercises: string[];
 }
 
+interface TabataPreset {
+  name: string;
+  config: TabataConfig;
+}
+
 type Phase = "idle" | "prepare" | "work" | "rest" | "done";
 
 const DEFAULT_CONFIG: TabataConfig = {
+  name: "",
   workSeconds: 20,
   restSeconds: 10,
   rounds: 8,
   prepSeconds: 10,
   exercises: [],
 };
+
+const SUGGESTED_EXERCISES = [
+  "Burpees", "Mountain Climbers", "Jumping Jacks", "Squats",
+  "Push-Ups", "Planche", "High Knees", "Lunges",
+  "Bicycle Crunches", "Jump Squats", "Wall Sit", "Pompes diamant",
+];
 
 const PHASE_COLORS: Record<Phase, string> = {
   idle: "text-onair-muted",
@@ -94,6 +107,19 @@ function saveConfig(cfg: TabataConfig) {
   localStorage.setItem("tabata_config", JSON.stringify(cfg));
 }
 
+function loadPresets(): TabataPreset[] {
+  try {
+    const raw = localStorage.getItem("tabata_presets");
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePresets(presets: TabataPreset[]) {
+  localStorage.setItem("tabata_presets", JSON.stringify(presets));
+}
+
 export default function TabataTimer() {
   const { t } = useTranslation();
   const [config, setConfig] = useState<TabataConfig>(loadConfig);
@@ -101,6 +127,7 @@ export default function TabataTimer() {
     () => loadConfig().exercises.join("\n")
   );
   const [settingsOpen, setSettingsOpen] = useState(true);
+  const [presets, setPresets] = useState<TabataPreset[]>(loadPresets);
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [remaining, setRemaining] = useState(0);
@@ -150,7 +177,6 @@ export default function TabataTimer() {
     const cfg = config;
 
     if (currentPhase === "prepare") {
-      // Start first work phase
       phaseRef.current = "work";
       roundRef.current = 1;
       remainingRef.current = cfg.workSeconds;
@@ -160,13 +186,11 @@ export default function TabataTimer() {
       audio.playTransition();
     } else if (currentPhase === "work") {
       if (round >= cfg.rounds) {
-        // Done
         stopTimer();
         phaseRef.current = "done";
         setPhase("done");
         audio.playDone();
       } else {
-        // Go to rest
         phaseRef.current = "rest";
         remainingRef.current = cfg.restSeconds;
         setPhase("rest");
@@ -174,7 +198,6 @@ export default function TabataTimer() {
         audio.playRestStart();
       }
     } else if (currentPhase === "rest") {
-      // Next round
       const nextRound = round + 1;
       phaseRef.current = "work";
       roundRef.current = nextRound;
@@ -240,6 +263,38 @@ export default function TabataTimer() {
     handleConfigChange("exercises", exercises);
   };
 
+  const addSuggestion = (name: string) => {
+    const newText = exercisesText ? exercisesText + "\n" + name : name;
+    handleExercisesChange(newText);
+  };
+
+  const handleSavePreset = () => {
+    const presetName = config.name.trim() || `Tabata ${presets.length + 1}`;
+    const existing = presets.findIndex((p) => p.name === presetName);
+    let updated: TabataPreset[];
+    if (existing >= 0) {
+      updated = [...presets];
+      updated[existing] = { name: presetName, config: { ...config, name: presetName } };
+    } else {
+      updated = [...presets, { name: presetName, config: { ...config, name: presetName } }];
+    }
+    setPresets(updated);
+    savePresets(updated);
+    if (!config.name.trim()) handleConfigChange("name", presetName);
+  };
+
+  const handleLoadPreset = (preset: TabataPreset) => {
+    setConfig(preset.config);
+    saveConfig(preset.config);
+    setExercisesText(preset.config.exercises.join("\n"));
+  };
+
+  const handleDeletePreset = (index: number) => {
+    const updated = presets.filter((_, i) => i !== index);
+    setPresets(updated);
+    savePresets(updated);
+  };
+
   // SVG ring
   const RADIUS = 90;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -259,7 +314,6 @@ export default function TabataTimer() {
       : null;
 
   const isRunning = phase !== "idle" && phase !== "done";
-  const isPaused = false; // simplified — pause resets to idle
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -278,6 +332,46 @@ export default function TabataTimer() {
 
           {settingsOpen && (
             <div className="mt-4 space-y-4">
+              {/* Session name */}
+              <div>
+                <label className="text-sm text-onair-muted mb-1 block">{t("tabata.sessionName")}</label>
+                <input
+                  type="text"
+                  value={config.name}
+                  onChange={(e) => handleConfigChange("name", e.target.value)}
+                  className="w-full"
+                  placeholder={t("tabata.sessionNamePlaceholder")}
+                />
+              </div>
+
+              {/* Presets */}
+              {presets.length > 0 && (
+                <div>
+                  <label className="text-sm text-onair-muted mb-2 block">{t("tabata.presets")}</label>
+                  <div className="flex flex-wrap gap-2">
+                    {presets.map((preset, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-onair-surface border border-onair-border text-sm"
+                      >
+                        <button
+                          onClick={() => handleLoadPreset(preset)}
+                          className="text-onair-text hover:text-onair-cyan transition-colors"
+                        >
+                          {preset.name}
+                        </button>
+                        <button
+                          onClick={() => handleDeletePreset(i)}
+                          className="text-onair-muted hover:text-onair-red transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-onair-muted mb-1 block">{t("tabata.workDuration")}</label>
@@ -329,7 +423,27 @@ export default function TabataTimer() {
                   className="w-full text-sm"
                   placeholder="Burpees&#10;Squats&#10;Mountain climbers"
                 />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {SUGGESTED_EXERCISES.map((name) => (
+                    <button
+                      key={name}
+                      onClick={() => addSuggestion(name)}
+                      className="px-2.5 py-1 rounded-full text-xs bg-onair-surface border border-onair-border text-onair-muted hover:text-onair-cyan hover:border-onair-cyan/30 transition-colors"
+                    >
+                      + {name}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Save preset button */}
+              <button
+                onClick={handleSavePreset}
+                className="btn-secondary flex items-center gap-2 text-sm"
+              >
+                <Save className="w-4 h-4" />
+                {t("tabata.savePreset")}
+              </button>
             </div>
           )}
         </div>
@@ -337,6 +451,11 @@ export default function TabataTimer() {
 
       {/* Timer display */}
       <div className="card flex flex-col items-center gap-6 py-8">
+        {/* Session name during timer */}
+        {config.name && isRunning && (
+          <p className="text-sm font-medium text-onair-muted">{config.name}</p>
+        )}
+
         {/* Phase badge */}
         <div className={cn("px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase", BADGE_CLASSES[phase])}>
           {t(`tabata.phases.${phase === "idle" ? "prepare" : phase}`)}

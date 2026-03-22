@@ -59,6 +59,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [notifTab, setNotifTab] = useState<"all" | "program" | "community">("all");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = () => {
@@ -101,6 +102,13 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
   };
+
+  const programTypes = new Set(["workout_completed", "whey_reminder"]);
+  const filteredNotifications = notifTab === "all"
+    ? notifications
+    : notifTab === "program"
+      ? notifications.filter((n) => programTypes.has(n.type))
+      : notifications.filter((n) => !programTypes.has(n.type));
 
   const handleNotificationClick = (notif: Notification) => {
     if (!notif.is_read) markAsRead(notif.id);
@@ -190,9 +198,26 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
                     )}
                   </div>
 
+                  {/* Category tabs */}
+                  <div className="flex border-b border-onair-border">
+                    {(["all", "program", "community"] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setNotifTab(tab)}
+                        className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                          notifTab === tab
+                            ? "text-onair-cyan border-b-2 border-onair-cyan"
+                            : "text-onair-muted hover:text-onair-text"
+                        }`}
+                      >
+                        {t(`notifications.tabs.${tab}`)}
+                      </button>
+                    ))}
+                  </div>
+
                   {/* List */}
                   <div className="max-h-[400px] overflow-y-auto">
-                    {notifications.length === 0 ? (
+                    {filteredNotifications.length === 0 ? (
                       <div className="py-10 text-center">
                         <Bell className="w-8 h-8 mx-auto text-onair-muted opacity-30 mb-2" />
                         <p className="text-sm text-onair-muted">
@@ -200,7 +225,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
                         </p>
                       </div>
                     ) : (
-                      notifications.map((notif) => {
+                      filteredNotifications.map((notif) => {
                         const Icon = typeIcons[notif.type] || Bell;
                         return (
                           <button

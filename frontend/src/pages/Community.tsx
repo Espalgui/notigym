@@ -15,7 +15,7 @@ interface Post {
   likes_count: number;
   comments_count: number;
   created_at: string;
-  author: { id: string; first_name: string; last_name: string; avatar_url: string | null } | null;
+  author: { id: string; username: string; first_name: string; last_name: string; avatar_url: string | null } | null;
   liked_by_me: boolean;
 }
 
@@ -126,11 +126,11 @@ export default function Community() {
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full bg-onair-surface flex items-center justify-center text-sm font-bold text-onair-cyan border border-onair-cyan/30">
-                    {post.author?.first_name?.[0] || "?"}
+                    {post.author?.username?.[0]?.toUpperCase() || "?"}
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">
-                      {post.author ? `${post.author.first_name} ${post.author.last_name}` : "Anonyme"}
+                      {post.author ? post.author.username : "Anonyme"}
                     </p>
                     <p className="text-xs text-onair-muted">{formatDateTime(post.created_at)}</p>
                   </div>
@@ -221,7 +221,7 @@ export default function Community() {
               {comments.map((c: any) => (
                 <div key={c.id} className="p-3 bg-onair-surface rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium">{c.author?.first_name || "?"}</span>
+                    <span className="text-sm font-medium">{c.author?.username || "?"}</span>
                     <span className="text-xs text-onair-muted">{formatDateTime(c.created_at)}</span>
                   </div>
                   <p className="text-sm">{c.content}</p>

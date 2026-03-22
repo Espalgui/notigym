@@ -34,6 +34,10 @@ async def update_me(
     db: AsyncSession = Depends(get_db),
 ):
     update_data = user_in.model_dump(exclude_unset=True)
+    if "username" in update_data and update_data["username"] != current_user.username:
+        existing = await db.execute(select(User).where(User.username == update_data["username"]))
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken")
     for field, value in update_data.items():
         setattr(current_user, field, value)
     current_user.updated_at = datetime.now(timezone.utc)

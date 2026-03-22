@@ -31,6 +31,7 @@ async def get_admin_user(current_user: User = Depends(get_current_active_user)) 
 class AdminUserResponse(BaseModel):
     id: uuid_mod.UUID
     email: str
+    username: str
     first_name: str
     last_name: str
     is_active: bool
@@ -59,6 +60,7 @@ async def list_users(
         AdminUserResponse(
             id=u.id,
             email=u.email,
+            username=u.username,
             first_name=u.first_name,
             last_name=u.last_name,
             is_active=u.is_active,
@@ -88,7 +90,7 @@ async def toggle_user_active(
     user.is_active = not user.is_active
     await db.flush()
     return AdminUserResponse(
-        id=user.id, email=user.email, first_name=user.first_name, last_name=user.last_name,
+        id=user.id, email=user.email, username=user.username, first_name=user.first_name, last_name=user.last_name,
         is_active=user.is_active, is_admin=user.is_admin, is_2fa_enabled=user.is_2fa_enabled,
         gender=user.gender, goal=user.goal, training_type=user.training_type,
         created_at=user.created_at.isoformat(),

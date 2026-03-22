@@ -8,12 +8,14 @@ from pydantic import BaseModel, EmailStr, Field
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
+    username: str = Field(min_length=2, max_length=50, pattern=r"^[a-zA-Z0-9_-]+$")
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     language: str = Field(default="fr", max_length=10)
 
 
 class UserUpdate(BaseModel):
+    username: str | None = Field(default=None, min_length=2, max_length=50, pattern=r"^[a-zA-Z0-9_-]+$")
     first_name: str | None = Field(default=None, min_length=1, max_length=100)
     last_name: str | None = Field(default=None, min_length=1, max_length=100)
     date_of_birth: date | None = None
@@ -28,6 +30,7 @@ class UserUpdate(BaseModel):
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
+    username: str
     first_name: str
     last_name: str
     avatar_url: str | None = None
@@ -49,6 +52,7 @@ class UserResponse(BaseModel):
 
 class UserProfile(BaseModel):
     id: uuid.UUID
+    username: str
     first_name: str
     last_name: str
     avatar_url: str | None = None

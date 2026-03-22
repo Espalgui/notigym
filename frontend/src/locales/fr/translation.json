@@ -24,6 +24,7 @@
     "email": "Email",
     "password": "Mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
+    "username": "Pseudo",
     "firstName": "Prénom",
     "lastName": "Nom",
     "loginBtn": "Se connecter",
@@ -41,7 +42,22 @@
     "hasAccount": "Déjà un compte ?",
     "forgotPassword": "Mot de passe oublié ?",
     "welcome": "Bienvenue sur NotiGym",
-    "welcomeBack": "Content de vous revoir"
+    "welcomeBack": "Content de vous revoir",
+    "verify": {
+      "loading": "Vérification en cours...",
+      "success": "Email confirmé !",
+      "successMsg": "Ton compte est activé, tu peux maintenant te connecter.",
+      "error": "Lien invalide",
+      "errorMsg": "Ce lien de vérification est invalide ou a expiré."
+    },
+    "checkEmail": {
+      "title": "Vérifie ta boîte mail",
+      "subtitle": "Un email de confirmation a été envoyé à",
+      "spam": "Pense à vérifier tes spams si tu ne le vois pas.",
+      "resend": "Renvoyer l'email",
+      "resent": "Email renvoyé !",
+      "backToLogin": "Retour à la connexion"
+    }
   },
   "language": {
     "title": "Choisissez votre langue",

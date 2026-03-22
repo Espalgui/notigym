@@ -83,7 +83,7 @@ async def create_post(
             "user_id": uid,
             "type": "new_post",
             "title": "Nouveau post dans la communauté !",
-            "message": f"{current_user.first_name} {current_user.last_name[0]}. a publié quelque chose.",
+            "message": f"{current_user.username} a publié quelque chose.",
             "link": "/community",
             "is_read": False,
             "created_at": datetime.now(timezone.utc),
@@ -166,7 +166,7 @@ async def toggle_like(
                 user_id=post.user_id,
                 type="like",
                 title="Nouveau like !",
-                message=f"{current_user.first_name} {current_user.last_name[0]}. a aimé ton post.",
+                message=f"{current_user.username} a aimé ton post.",
                 link="/community",
             )
 
@@ -203,7 +203,7 @@ async def add_comment(
             user_id=post.user_id,
             type="comment",
             title="Nouveau commentaire !",
-            message=f"{current_user.first_name} {current_user.last_name[0]}. a commenté ton post.",
+            message=f"{current_user.username} a commenté ton post.",
             link="/community",
         )
 

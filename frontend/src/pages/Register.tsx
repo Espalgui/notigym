@@ -3,17 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
-import { useAuthStore } from "@/stores/authStore";
+import api from "@/lib/api";
 import toast from "react-hot-toast";
 
 export default function Register() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { register } = useAuthStore();
   const [form, setForm] = useState({
     email: "",
     password: "",
     confirmPassword: "",
+    username: "",
     first_name: "",
     last_name: "",
   });
@@ -35,15 +35,15 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await register({
+      await api.post("/auth/register", {
         email: form.email,
         password: form.password,
+        username: form.username,
         first_name: form.first_name,
         last_name: form.last_name,
         language: i18n.language,
       });
-      toast.success(t("auth.welcome"));
-      navigate("/");
+      navigate(`/check-email?email=${encodeURIComponent(form.email)}`);
     } catch (err: any) {
       const msg = err.response?.data?.detail || "Erreur lors de l'inscription";
       toast.error(msg);
@@ -87,6 +87,20 @@ export default function Register() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
+          <div>
+            <label className="block text-sm font-medium text-onair-muted mb-2">
+              {t("auth.username")}
+            </label>
+            <input
+              type="text"
+              value={form.username}
+              onChange={(e) => update("username", e.target.value)}
+              required
+              className="w-full"
+              placeholder="mon_pseudo"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-onair-muted mb-2">

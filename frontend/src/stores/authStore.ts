@@ -4,6 +4,7 @@ import api from "@/lib/api";
 interface User {
   id: string;
   email: string;
+  username: string;
   first_name: string;
   last_name: string;
   avatar_url: string | null;
@@ -23,7 +24,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string, totpCode?: string) => Promise<{ requires2FA?: boolean }>;
-  register: (data: { email: string; password: string; first_name: string; last_name: string; language: string }) => Promise<void>;
+  register: (data: { email: string; password: string; username: string; first_name: string; last_name: string; language: string }) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   updateUser: (data: Partial<User>) => Promise<void>;

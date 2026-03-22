@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 interface AdminUser {
   id: string;
   email: string;
+  username: string;
   first_name: string;
   last_name: string;
   is_active: boolean;
@@ -50,7 +51,7 @@ export default function Admin() {
   }
 
   const filtered = users.filter((u) =>
-    `${u.first_name} ${u.last_name} ${u.email}`.toLowerCase().includes(search.toLowerCase())
+    `${u.username} ${u.first_name} ${u.last_name} ${u.email}`.toLowerCase().includes(search.toLowerCase())
   );
 
   const toggleActive = async (userId: string) => {
@@ -123,13 +124,13 @@ export default function Admin() {
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-onair-red to-onair-purple flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                {user.first_name[0]}
+                {user.username[0].toUpperCase()}
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-medium">
-                    {user.first_name} {user.last_name}
+                    {user.username}
                   </p>
                   {user.is_admin && (
                     <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-onair-cyan/10 text-onair-cyan">

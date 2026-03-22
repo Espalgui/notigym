@@ -204,12 +204,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               />
             ) : (
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-onair-red to-onair-purple flex items-center justify-center text-sm font-bold text-white shadow-sm">
-                {user.first_name[0]}
+                {user.username[0].toUpperCase()}
               </div>
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {user.first_name} {user.last_name}
+                {user.username}
               </p>
               <p className="text-xs text-onair-muted truncate">{user.email}</p>
             </div>

@@ -266,11 +266,11 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
                 />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-onair-red to-onair-purple flex items-center justify-center text-sm font-bold text-white">
-                  {user.first_name[0]}
+                  {user.username[0].toUpperCase()}
                 </div>
               )}
               <span className="hidden sm:block text-sm font-medium text-onair-text">
-                {user.first_name}
+                {user.username}
               </span>
             </button>
           )}

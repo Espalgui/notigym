@@ -130,7 +130,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl lg:text-3xl font-display font-bold text-onair-text">
-              {t("dashboard.welcome", { name: user?.first_name || "" })}
+              {t("dashboard.welcome", { name: user?.username || "" })}
             </h1>
             <p className="text-onair-muted mt-1">{t("dashboard.title")}</p>
           </div>

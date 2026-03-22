@@ -260,6 +260,7 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>("personal");
 
   const [form, setForm] = useState({
+    username: user?.username || "",
     first_name: user?.first_name || "",
     last_name: user?.last_name || "",
     height_cm: user?.height_cm?.toString() || "",
@@ -419,6 +420,7 @@ export default function Profile() {
     setSaving(true);
     try {
       const payload: any = {
+        username: form.username,
         first_name: form.first_name,
         last_name: form.last_name,
         gender: form.gender || null,
@@ -541,8 +543,7 @@ export default function Profile() {
             />
           ) : (
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-onair-red to-onair-purple flex items-center justify-center text-2xl font-bold text-white shadow-lg">
-              {user?.first_name?.[0]}
-              {user?.last_name?.[0]}
+              {user?.username?.[0]?.toUpperCase()}
             </div>
           )}
           <input
@@ -571,7 +572,7 @@ export default function Profile() {
         </div>
         <div className="text-center sm:text-left">
           <h1 className="text-xl font-display font-bold text-onair-text">
-            {user?.first_name} {user?.last_name}
+            {user?.username}
           </h1>
           <p className="text-sm text-onair-muted">{user?.email}</p>
           {user?.created_at && (
@@ -635,6 +636,19 @@ export default function Profile() {
                   </div>
 
                   <div className="card space-y-4">
+                    <div>
+                      <label className="text-sm text-onair-muted mb-2 block">
+                        {t("auth.username")}
+                      </label>
+                      <input
+                        value={form.username}
+                        onChange={(e) =>
+                          setForm({ ...form, username: e.target.value })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm text-onair-muted mb-2 block">

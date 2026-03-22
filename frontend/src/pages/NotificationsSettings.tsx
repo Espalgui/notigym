@@ -6,8 +6,7 @@ import toast from "react-hot-toast";
 
 interface UserForNotification {
   id: string;
-  first_name: string;
-  last_name: string;
+  username: string;
   avatar_url: string | null;
 }
 
@@ -174,13 +173,13 @@ export default function NotificationsSettings() {
                     />
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-onair-red to-onair-purple flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                      {user.first_name[0]}
+                      {user.username[0].toUpperCase()}
                     </div>
                   )}
 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-onair-text truncate">
-                      {user.first_name} {user.last_name}
+                      {user.username}
                     </p>
                     <p className="text-xs text-onair-muted mt-0.5">
                       {isMuted

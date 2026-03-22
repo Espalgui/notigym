@@ -32,8 +32,7 @@ class NotificationPreferencesUpdate(BaseModel):
 
 class UserForNotification(BaseModel):
     id: uuid.UUID
-    first_name: str
-    last_name: str
+    username: str
     avatar_url: str | None = None
 
     model_config = {"from_attributes": True}

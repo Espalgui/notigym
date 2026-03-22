@@ -326,7 +326,7 @@ async def update_session(
             user_id=current_user.id,
             type="workout_completed",
             title="Séance terminée !",
-            message=f"Bravo {current_user.first_name}, ta séance est enregistrée. {duration}",
+            message=f"Bravo {current_user.username}, ta séance est enregistrée. {duration}",
             link="/workouts",
         )
         await create_notification(
@@ -334,7 +334,7 @@ async def update_session(
             user_id=current_user.id,
             type="whey_reminder",
             title="Nutrition post-séance",
-            message=f"C'est le moment idéal pour prendre ta dose de protéines, {current_user.first_name} ! 🥤",
+            message=f"C'est le moment idéal pour prendre ta dose de protéines, {current_user.username} ! 🥤",
             link="/nutrition",
         )
 

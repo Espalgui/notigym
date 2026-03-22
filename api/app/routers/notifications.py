@@ -155,7 +155,7 @@ async def list_users_for_mute(
     """Retourne tous les utilisateurs (sans leur email) pour la gestion des mutes."""
     result = await db.execute(
         select(User).where(User.id != current_user.id, User.is_active == True)  # noqa: E712
-        .order_by(User.first_name, User.last_name)
+        .order_by(User.username)
     )
     return result.scalars().all()
 

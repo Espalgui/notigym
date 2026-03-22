@@ -1,6 +1,9 @@
+import logging
 import uuid as uuid_mod
+from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +17,9 @@ from app.notifications import create_notification
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.user import UserCreate, UserResponse
 from app.utils.backup_codes import verify_and_consume_backup_code
+from app.utils.email import send_login_notification_email, send_verification_email
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -31,6 +37,15 @@ def _set_auth_cookies(response: Response, access_token: str, refresh_token: str)
     response.set_cookie("refresh_token", refresh_token, max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400, **_COOKIE_OPTS)
 
 
+def _create_email_verification_token(user_id: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(hours=24)
+    return jwt.encode(
+        {"sub": user_id, "type": "email_verify", "exp": expire},
+        settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
 async def register(request: Request, response: Response, user_in: UserCreate, db: AsyncSession = Depends(get_db)):
@@ -38,9 +53,14 @@ async def register(request: Request, response: Response, user_in: UserCreate, db
     if result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
+    result = await db.execute(select(User).where(User.username == user_in.username))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken")
+
     user = User(
         email=user_in.email,
         password_hash=pwd_context.hash(user_in.password),
+        username=user_in.username,
         first_name=user_in.first_name,
         last_name=user_in.last_name,
         language=user_in.language,
@@ -54,15 +74,55 @@ async def register(request: Request, response: Response, user_in: UserCreate, db
         user_id=user.id,
         type="welcome",
         title="Bienvenue sur NotiGym !",
-        message=f"Salut {user.first_name}, ton compte est prêt. Configure ton profil et crée ton premier programme !",
+        message=f"Salut {user.username}, ton compte est prêt. Confirme ton email pour commencer !",
         link="/profile",
     )
 
-    access_token = create_access_token({"sub": str(user.id)})
-    refresh_token = create_refresh_token({"sub": str(user.id)})
-    _set_auth_cookies(response, access_token, refresh_token)
+    # Send verification email
+    token = _create_email_verification_token(str(user.id))
+    send_verification_email(user.email, user.username, token)
 
     return user
+
+
+@router.get("/verify-email")
+async def verify_email(token: str = Query(...), db: AsyncSession = Depends(get_db)):
+    payload = verify_token(token)
+    if not payload or payload.get("type") != "email_verify":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
+
+    user_id = payload.get("sub")
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if user.email_verified:
+        return {"status": "already_verified"}
+
+    user.email_verified = True
+    await db.flush()
+    return {"status": "verified"}
+
+
+@router.post("/resend-verification")
+@limiter.limit("3/minute")
+async def resend_verification(request: Request, db: AsyncSession = Depends(get_db)):
+    body = await request.json()
+    email = body.get("email")
+    if not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email required")
+
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    # Always return success to prevent email enumeration
+    if not user or user.email_verified:
+        return {"status": "ok"}
+
+    token = _create_email_verification_token(str(user.id))
+    send_verification_email(user.email, user.username, token)
+    return {"status": "ok"}
 
 
 @router.post("/login")
@@ -76,6 +136,9 @@ async def login(request: Request, response: Response, login_in: LoginRequest, db
 
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
+
+    if not user.email_verified:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email not verified")
 
     if user.is_2fa_enabled:
         if not login_in.totp_code:
@@ -100,6 +163,9 @@ async def login(request: Request, response: Response, login_in: LoginRequest, db
     access_token = create_access_token({"sub": str(user.id)})
     refresh_token = create_refresh_token({"sub": str(user.id)})
     _set_auth_cookies(response, access_token, refresh_token)
+
+    # Send login notification email (fire & forget)
+    send_login_notification_email(user.email, user.username)
 
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 

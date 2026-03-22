@@ -24,6 +24,7 @@
     "email": "Email",
     "password": "Password",
     "confirmPassword": "Confirm Password",
+    "username": "Username",
     "firstName": "First Name",
     "lastName": "Last Name",
     "loginBtn": "Sign In",
@@ -41,7 +42,22 @@
     "hasAccount": "Already have an account?",
     "forgotPassword": "Forgot password?",
     "welcome": "Welcome to NotiGym",
-    "welcomeBack": "Welcome back"
+    "welcomeBack": "Welcome back",
+    "verify": {
+      "loading": "Verifying...",
+      "success": "Email confirmed!",
+      "successMsg": "Your account is activated, you can now log in.",
+      "error": "Invalid link",
+      "errorMsg": "This verification link is invalid or has expired."
+    },
+    "checkEmail": {
+      "title": "Check your inbox",
+      "subtitle": "A confirmation email has been sent to",
+      "spam": "Check your spam folder if you don't see it.",
+      "resend": "Resend email",
+      "resent": "Email sent!",
+      "backToLogin": "Back to login"
+    }
   },
   "language": {
     "title": "Choose your language",

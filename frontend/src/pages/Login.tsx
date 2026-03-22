@@ -28,8 +28,13 @@ export default function Login() {
       } else {
         navigate("/");
       }
-    } catch {
-      toast.error(t("auth.invalidCredentials"));
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      if (detail === "Email not verified") {
+        navigate(`/check-email?email=${encodeURIComponent(email)}`);
+      } else {
+        toast.error(t("auth.invalidCredentials"));
+      }
     } finally {
       setLoading(false);
     }

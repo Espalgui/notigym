@@ -20,6 +20,8 @@ import Profile from "@/pages/Profile";
 import TabataTimer from "@/pages/TabataTimer";
 import NotificationsSettings from "@/pages/NotificationsSettings";
 import Admin from "@/pages/Admin";
+import VerifyEmail from "@/pages/VerifyEmail";
+import CheckEmail from "@/pages/CheckEmail";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -86,6 +88,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/language" element={<LanguageSelect />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/check-email" element={<CheckEmail />} />
         <Route
           path="/"
           element={

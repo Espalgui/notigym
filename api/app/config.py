@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 10
     APP_ENV: str = "development"
     FRONTEND_URL: str = "http://localhost:3000"
+    SMTP_HOST: str = "mail.infomaniak.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@cyberdev-it.com"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

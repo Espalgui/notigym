@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
-import { Plus, Dumbbell, Calendar, Trophy, ChevronRight, Play, Sparkles, Download, Clock, Target } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Dumbbell, Calendar, Trophy, ChevronRight, Play, Sparkles, Download, Clock, Target, ChevronDown, Flame } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
+import { formatDateTime, formatDuration, formatVolume } from "@/lib/utils";
 
 interface Program {
   id: string;
@@ -28,18 +29,69 @@ interface Template {
   genders: string[];
 }
 
+interface SessionSet {
+  id: string;
+  exercise_id: string;
+  set_number: number;
+  reps: number | null;
+  weight_kg: number | null;
+  duration_seconds: number | null;
+  rpe: number | null;
+  is_warmup: boolean;
+  is_pr: boolean;
+}
+
+interface Session {
+  id: string;
+  started_at: string;
+  finished_at: string | null;
+  duration_minutes: number | null;
+  feeling: number | null;
+  notes: string | null;
+  is_completed: boolean;
+  sets: SessionSet[];
+}
+
+interface ExerciseRef {
+  id: string;
+  name_fr: string;
+  name_en: string;
+  muscle_group: string;
+}
+
 export default function Workouts() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.startsWith("fr") ? "fr" : "en";
   const [programs, setPrograms] = useState<Program[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [importing, setImporting] = useState<string | null>(null);
   const [tab, setTab] = useState<"programs" | "history" | "records">("programs");
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [exerciseMap, setExerciseMap] = useState<Record<string, ExerciseRef>>({});
+  const [expandedSession, setExpandedSession] = useState<string | null>(null);
+  const [loadingSessions, setLoadingSessions] = useState(false);
 
   useEffect(() => {
     api.get("/workouts/programs").then((r) => setPrograms(r.data)).catch(() => {});
     api.get("/workouts/templates").then((r) => setTemplates(r.data)).catch(() => {});
+    api.get("/exercises?limit=500").then((r) => {
+      const map: Record<string, ExerciseRef> = {};
+      for (const e of r.data) map[e.id] = e;
+      setExerciseMap(map);
+    }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (tab === "history" && sessions.length === 0) {
+      setLoadingSessions(true);
+      api.get("/workouts/sessions?completed_only=true&limit=50")
+        .then((r) => setSessions(r.data))
+        .catch(() => {})
+        .finally(() => setLoadingSessions(false));
+    }
+  }, [tab]);
 
   const typeColors: Record<string, string> = {
     push_pull_legs: "text-onair-red",
@@ -232,9 +284,134 @@ export default function Workouts() {
       )}
 
       {tab === "history" && (
-        <div className="card text-center py-12">
-          <Calendar className="w-12 h-12 mx-auto text-onair-muted/30 mb-4" />
-          <p className="text-onair-muted">{t("common.noData")}</p>
+        <div className="space-y-3">
+          {loadingSessions ? (
+            <div className="card text-center py-12">
+              <p className="text-onair-muted">{t("common.loading")}</p>
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="card text-center py-12">
+              <Calendar className="w-12 h-12 mx-auto text-onair-muted/30 mb-4" />
+              <p className="text-onair-muted mb-1">{t("workouts.historyEmpty")}</p>
+              <p className="text-xs text-onair-muted/60">{t("workouts.historyEmptyHint")}</p>
+            </div>
+          ) : (
+            sessions.map((session, i) => {
+              const isExpanded = expandedSession === session.id;
+              const totalVolume = session.sets.reduce((sum, s) => sum + (s.weight_kg || 0) * (s.reps || 0), 0);
+              const exerciseIds = [...new Set(session.sets.map((s) => s.exercise_id))];
+
+              // Group sets by exercise
+              const grouped: { exerciseId: string; sets: SessionSet[] }[] = [];
+              for (const s of session.sets) {
+                const g = grouped.find((x) => x.exerciseId === s.exercise_id);
+                if (g) g.sets.push(s);
+                else grouped.push({ exerciseId: s.exercise_id, sets: [s] });
+              }
+
+              const exName = (id: string) => {
+                const ex = exerciseMap[id];
+                if (!ex) return id.slice(0, 8);
+                return lang === "fr" ? ex.name_fr : ex.name_en;
+              };
+
+              return (
+                <motion.div
+                  key={session.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="card !p-0 overflow-hidden"
+                >
+                  <button
+                    onClick={() => setExpandedSession(isExpanded ? null : session.id)}
+                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-onair-surface/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold">
+                          {formatDateTime(session.started_at, lang === "fr" ? "fr-FR" : "en-US")}
+                        </span>
+                        {session.feeling && (
+                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-onair-surface text-onair-muted">
+                            {["", "😫", "😕", "😐", "😊", "🔥"][session.feeling]}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-onair-muted">
+                        {session.duration_minutes != null && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatDuration(session.duration_minutes)}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Dumbbell className="w-3 h-3" />
+                          {exerciseIds.length} {t("workouts.exercises")}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Flame className="w-3 h-3" />
+                          {formatVolume(totalVolume)}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-onair-muted transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="border-t border-onair-border">
+                          {grouped.map((group) => (
+                            <div key={group.exerciseId} className="border-b border-onair-border/50 last:border-b-0">
+                              <div className="px-4 py-2 bg-onair-surface/30 flex items-center gap-2">
+                                <span className="text-xs font-semibold text-onair-text">{exName(group.exerciseId)}</span>
+                                <span className="text-[10px] text-onair-muted ml-auto">
+                                  {exerciseMap[group.exerciseId]?.muscle_group}
+                                </span>
+                              </div>
+                              <div className="px-4">
+                                <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem] gap-2 py-1.5 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
+                                  <span className="text-center">#</span>
+                                  <span className="text-center">{t("workouts.weight")}</span>
+                                  <span className="text-center">{t("workouts.reps")}</span>
+                                  <span className="text-center">Sec</span>
+                                  <span />
+                                </div>
+                                {group.sets.map((s) => (
+                                  <div key={s.id} className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem] gap-2 py-1.5 text-sm">
+                                    <span className="text-center text-onair-muted font-mono text-xs">{s.set_number}</span>
+                                    <span className="text-center font-medium">{s.weight_kg != null ? `${s.weight_kg} kg` : "–"}</span>
+                                    <span className="text-center">{s.reps ?? "–"}</span>
+                                    <span className="text-center">{s.duration_seconds ? `${s.duration_seconds}s` : "–"}</span>
+                                    <span className="text-center">
+                                      {s.is_warmup && <span className="text-[10px] text-onair-amber">W</span>}
+                                      {s.is_pr && <span className="text-[10px] text-onair-red font-bold">PR</span>}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                          {session.notes && (
+                            <div className="px-4 py-2 text-xs text-onair-muted italic border-t border-onair-border/50">
+                              {session.notes}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })
+          )}
         </div>
       )}
 

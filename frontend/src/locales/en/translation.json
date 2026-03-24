@@ -121,6 +121,12 @@
     "duration": "Duration",
     "notes": "Notes",
     "completed": "Completed",
+    "historyEmpty": "No sessions recorded",
+    "historyEmptyHint": "Start a session to see it here.",
+    "sessionDetail": {
+      "totalVolume": "Total volume",
+      "warmup": "Warm-up"
+    },
     "session": {
       "description": "Track your performance in real time",
       "started": "Session started!",

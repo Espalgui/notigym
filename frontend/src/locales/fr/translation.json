@@ -121,6 +121,12 @@
     "duration": "Durée",
     "notes": "Notes",
     "completed": "Terminée",
+    "historyEmpty": "Aucune séance enregistrée",
+    "historyEmptyHint": "Démarrez une séance pour la retrouver ici.",
+    "sessionDetail": {
+      "totalVolume": "Volume total",
+      "warmup": "Échauffement"
+    },
     "session": {
       "description": "Enregistrez vos performances en temps réel",
       "started": "Séance démarrée !",

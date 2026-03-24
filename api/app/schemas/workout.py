@@ -97,8 +97,9 @@ class WorkoutProgramResponse(BaseModel):
 class SessionSetCreate(BaseModel):
     exercise_id: uuid.UUID
     set_number: int
-    reps: int
-    weight_kg: float
+    reps: int | None = None
+    weight_kg: float | None = None
+    duration_seconds: int | None = None
     rpe: float | None = None
     is_warmup: bool = False
     notes: str | None = None
@@ -107,6 +108,7 @@ class SessionSetCreate(BaseModel):
 class SessionSetUpdate(BaseModel):
     reps: int | None = None
     weight_kg: float | None = None
+    duration_seconds: int | None = None
     rpe: float | None = None
     is_warmup: bool | None = None
     is_pr: bool | None = None
@@ -118,8 +120,9 @@ class SessionSetResponse(BaseModel):
     session_id: uuid.UUID
     exercise_id: uuid.UUID
     set_number: int
-    reps: int
-    weight_kg: float
+    reps: int | None = None
+    weight_kg: float | None = None
+    duration_seconds: int | None = None
     rpe: float | None = None
     is_warmup: bool
     is_pr: bool

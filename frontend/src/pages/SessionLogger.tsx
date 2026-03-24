@@ -32,6 +32,7 @@ interface SetEntry {
   set_number: number;
   reps: number;
   weight_kg: number;
+  duration_seconds: number;
   rpe: number | null;
   is_warmup: boolean;
 }
@@ -103,6 +104,7 @@ export default function SessionLogger() {
           set_number: existingSets.length + 1,
           reps: 0,
           weight_kg: existingSets.length > 0 ? existingSets[existingSets.length - 1].weight_kg : 0,
+          duration_seconds: 0,
           rpe: null,
           is_warmup: false,
         },
@@ -125,7 +127,7 @@ export default function SessionLogger() {
     setSets((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const validSets = sets.filter((s) => s.reps > 0 && s.weight_kg > 0);
+  const validSets = sets.filter((s) => s.reps > 0 || s.duration_seconds > 0);
   const canSave = validSets.length > 0;
 
   const handleSave = () => {
@@ -145,8 +147,9 @@ export default function SessionLogger() {
         await api.post(`/workouts/sessions/${sessionId}/sets`, {
           exercise_id: s.exercise_id,
           set_number: s.set_number,
-          reps: s.reps,
-          weight_kg: s.weight_kg,
+          reps: s.reps || null,
+          weight_kg: s.weight_kg || null,
+          duration_seconds: s.duration_seconds || null,
           rpe: s.rpe,
           is_warmup: s.is_warmup,
         });
@@ -288,19 +291,20 @@ export default function SessionLogger() {
               </div>
               <div className="divide-y divide-onair-border/50">
                 {/* Column headers */}
-                <div className="grid grid-cols-[2rem_1fr_1fr_2.5rem_2.5rem] gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
+                <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem] gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
                   <span className="text-center">#</span>
                   <span className="text-center">{t("workouts.weight")}</span>
                   <span className="text-center">{t("workouts.reps")}</span>
+                  <span className="text-center">Sec</span>
                   <span className="text-center">W</span>
                   <span />
                 </div>
                 {group.entries.map(({ set: s, globalIdx }) => {
-                  const isValid = s.reps > 0 && s.weight_kg > 0;
+                  const isValid = s.reps > 0 || s.duration_seconds > 0;
                   return (
                     <div
                       key={globalIdx}
-                      className={`grid grid-cols-[2rem_1fr_1fr_2.5rem_2.5rem] gap-2 px-4 py-2.5 items-center transition-colors ${
+                      className={`grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem] gap-2 px-4 py-2.5 items-center transition-colors ${
                         isValid ? "bg-onair-green/5" : ""
                       }`}
                     >
@@ -326,6 +330,16 @@ export default function SessionLogger() {
                         }
                         className="text-center text-sm p-1.5 rounded-lg"
                         placeholder="reps"
+                        min={0}
+                      />
+                      <input
+                        type="number"
+                        value={s.duration_seconds || ""}
+                        onChange={(e) =>
+                          updateSet(globalIdx, "duration_seconds", +e.target.value)
+                        }
+                        className="text-center text-sm p-1.5 rounded-lg"
+                        placeholder="sec"
                         min={0}
                       />
                       <button

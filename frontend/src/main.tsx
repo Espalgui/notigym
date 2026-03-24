@@ -14,8 +14,14 @@ window.addEventListener("beforeinstallprompt", (e) => {
   window.dispatchEvent(new Event("pwa-install-ready"));
 });
 
-// Enregistrer le service worker (auto-update silencieux)
-registerSW({ immediate: true });
+// Enregistrer le service worker — reload auto quand une MAJ est dispo
+registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    // Nouvelle version détectée → reload silencieux
+    window.location.reload();
+  },
+});
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

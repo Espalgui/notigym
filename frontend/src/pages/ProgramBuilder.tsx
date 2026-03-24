@@ -15,6 +15,7 @@ interface Exercise {
 }
 
 interface ProgramExercise {
+  id?: string;
   exercise_id: string;
   exercise_order: number;
   sets: number;
@@ -49,6 +50,7 @@ export default function ProgramBuilder() {
     name_fr: "", name_en: "", muscle_group: "chest", category: "bodyweight",
   });
   const [creatingExercise, setCreatingExercise] = useState(false);
+  const [originalDays, setOriginalDays] = useState<Day[]>([]);
 
   useEffect(() => {
     api.get("/exercises?limit=500").then((r) => setExerciseLib(r.data)).catch(() => {});
@@ -57,22 +59,23 @@ export default function ProgramBuilder() {
         const p = r.data;
         setName(p.name);
         setProgramType(p.program_type);
-        setDays(
-          p.days.map((d: any) => ({
-            id: d.id,
-            name: d.name,
-            day_order: d.day_order,
-            exercises: d.exercises.map((e: any) => ({
-              exercise_id: e.exercise_id,
-              exercise_order: e.exercise_order,
-              sets: e.sets,
-              reps_min: e.reps_min,
-              reps_max: e.reps_max,
-              rest_seconds: e.rest_seconds,
-              exercise: e.exercise,
-            })),
-          }))
-        );
+        const loadedDays = p.days.map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          day_order: d.day_order,
+          exercises: d.exercises.map((e: any) => ({
+            id: e.id,
+            exercise_id: e.exercise_id,
+            exercise_order: e.exercise_order,
+            sets: e.sets,
+            reps_min: e.reps_min,
+            reps_max: e.reps_max,
+            rest_seconds: e.rest_seconds,
+            exercise: e.exercise,
+          })),
+        }));
+        setDays(loadedDays);
+        setOriginalDays(JSON.parse(JSON.stringify(loadedDays)));
       });
     }
   }, [id]);
@@ -124,18 +127,67 @@ export default function ProgramBuilder() {
       } else {
         await api.put(`/workouts/programs/${programId}`, { name, program_type: programType });
       }
-      for (const day of days) {
-        if (!day.id) {
+
+      // Delete removed days
+      const currentDayIds = new Set(days.filter((d) => d.id).map((d) => d.id));
+      for (const orig of originalDays) {
+        if (orig.id && !currentDayIds.has(orig.id)) {
+          await api.delete(`/workouts/programs/days/${orig.id}`);
+        }
+      }
+
+      for (const [dayIdx, day] of days.entries()) {
+        if (day.id) {
+          // Update existing day
+          await api.put(`/workouts/programs/days/${day.id}`, {
+            name: day.name,
+            day_order: dayIdx + 1,
+          });
+
+          // Delete removed exercises
+          const currentExIds = new Set(day.exercises.filter((e) => e.id).map((e) => e.id));
+          const origDay = originalDays.find((d) => d.id === day.id);
+          if (origDay) {
+            for (const origEx of origDay.exercises) {
+              if (origEx.id && !currentExIds.has(origEx.id)) {
+                await api.delete(`/workouts/programs/exercises/${origEx.id}`);
+              }
+            }
+          }
+
+          // Update or create exercises
+          for (const [exIdx, ex] of day.exercises.entries()) {
+            if (ex.id) {
+              await api.put(`/workouts/programs/exercises/${ex.id}`, {
+                exercise_order: exIdx + 1,
+                sets: ex.sets,
+                reps_min: ex.reps_min,
+                reps_max: ex.reps_max,
+                rest_seconds: ex.rest_seconds,
+              });
+            } else {
+              await api.post(`/workouts/programs/days/${day.id}/exercises`, {
+                exercise_id: ex.exercise_id,
+                exercise_order: exIdx + 1,
+                sets: ex.sets,
+                reps_min: ex.reps_min,
+                reps_max: ex.reps_max,
+                rest_seconds: ex.rest_seconds,
+              });
+            }
+          }
+        } else {
+          // Create new day
           const { data: prog } = await api.post(`/workouts/programs/${programId}/days`, {
             name: day.name,
-            day_order: day.day_order,
+            day_order: dayIdx + 1,
           });
-          const createdDay = prog.days.find((d: any) => d.day_order === day.day_order);
+          const createdDay = prog.days.find((d: any) => d.day_order === dayIdx + 1);
           if (createdDay) {
-            for (const ex of day.exercises) {
+            for (const [exIdx, ex] of day.exercises.entries()) {
               await api.post(`/workouts/programs/days/${createdDay.id}/exercises`, {
                 exercise_id: ex.exercise_id,
-                exercise_order: ex.exercise_order,
+                exercise_order: exIdx + 1,
                 sets: ex.sets,
                 reps_min: ex.reps_min,
                 reps_max: ex.reps_max,
@@ -145,6 +197,7 @@ export default function ProgramBuilder() {
           }
         }
       }
+
       toast.success(t("common.success"));
       navigate("/workouts");
     } catch {

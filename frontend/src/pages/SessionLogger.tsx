@@ -24,6 +24,7 @@ interface Exercise {
   name_en: string;
   muscle_group: string;
   category: string;
+  image_url?: string;
 }
 
 interface SetEntry {
@@ -572,9 +573,12 @@ export default function SessionLogger() {
                   <button
                     key={ex.id}
                     onClick={() => addSet(ex)}
-                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-onair-surface transition-colors flex items-center justify-between"
+                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-onair-surface transition-colors flex items-center gap-3"
                   >
-                    <div>
+                    {ex.image_url && (
+                      <img src={ex.image_url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                    )}
+                    <div className="flex-1">
                       <p className="text-sm font-medium text-onair-text">
                         {exName(ex, lang)}
                       </p>
@@ -582,7 +586,7 @@ export default function SessionLogger() {
                         {ex.muscle_group}
                       </p>
                     </div>
-                    <Plus className="w-4 h-4 text-onair-cyan" />
+                    <Plus className="w-4 h-4 text-onair-cyan flex-shrink-0" />
                   </button>
                 ))}
                 {filteredExercises.length === 0 && (

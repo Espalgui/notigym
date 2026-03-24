@@ -12,6 +12,7 @@ interface Exercise {
   name_en: string;
   muscle_group: string;
   category: string;
+  image_url?: string;
 }
 
 interface ProgramExercise {
@@ -405,8 +406,11 @@ export default function ProgramBuilder() {
                 <button
                   key={ex.id}
                   onClick={() => addExercise(showExerciseModal, ex)}
-                  className="w-full text-left p-3 rounded-lg hover:bg-onair-surface transition-colors flex items-center justify-between"
+                  className="w-full text-left p-3 rounded-lg hover:bg-onair-surface transition-colors flex items-center gap-3"
                 >
+                  {ex.image_url && (
+                    <img src={ex.image_url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                  )}
                   <div>
                     <p className="text-sm font-medium">{exName(ex)}</p>
                     <p className="text-xs text-onair-muted">{ex.muscle_group} / {ex.category}</p>

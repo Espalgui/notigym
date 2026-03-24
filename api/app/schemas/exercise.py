@@ -11,6 +11,7 @@ class ExerciseCreate(BaseModel):
     category: str
     description_fr: str | None = None
     description_en: str | None = None
+    image_url: str | None = None
     is_compound: bool = False
 
 
@@ -21,6 +22,7 @@ class ExerciseUpdate(BaseModel):
     category: str | None = None
     description_fr: str | None = None
     description_en: str | None = None
+    image_url: str | None = None
     is_compound: bool | None = None
 
 

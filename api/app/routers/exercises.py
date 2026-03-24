@@ -24,9 +24,7 @@ async def list_exercises(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(Exercise).where(
-        or_(Exercise.is_custom == False, Exercise.created_by == current_user.id)  # noqa: E712
-    )
+    query = select(Exercise)
     if muscle_group:
         query = query.where(Exercise.muscle_group == muscle_group)
     if category:
@@ -54,8 +52,7 @@ async def get_exercise(
     exercise = result.scalar_one_or_none()
     if not exercise:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
-    if exercise.is_custom and exercise.created_by != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    # All exercises are now visible to all users
     return exercise
 
 
@@ -76,6 +73,7 @@ async def create_exercise(
         category=data.category,
         description_fr=data.description_fr,
         description_en=data.description_en,
+        image_url=data.image_url,
         is_compound=data.is_compound,
         is_custom=True,
         created_by=current_user.id,

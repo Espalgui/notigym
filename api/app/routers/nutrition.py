@@ -1,6 +1,7 @@
 import uuid as uuid_mod
 from datetime import date, timedelta
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +23,62 @@ from app.schemas.nutrition import (
 )
 
 router = APIRouter(prefix="/nutrition", tags=["nutrition"])
+
+
+# --- OpenFoodFacts Search ---
+
+@router.get("/search-food")
+async def search_food(
+    q: str = Query(..., min_length=2),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Recherche un aliment via OpenFoodFacts et renvoie les résultats formatés."""
+    lang = getattr(current_user, "language", "fr") or "fr"
+    url = "https://world.openfoodfacts.net/cgi/search.pl"
+    params = {
+        "search_terms": q,
+        "search_simple": 1,
+        "action": "process",
+        "json": 1,
+        "page_size": 50,
+        "fields": "product_name,product_name_fr,brands,nutriments,image_front_small_url,quantity",
+        "lc": lang,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(url, params=params)
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception:
+        return []
+
+    search_lower = q.lower()
+    results = []
+    for p in data.get("products", []):
+        name_fr = p.get("product_name_fr") or ""
+        name_en = p.get("product_name") or ""
+        name = name_fr or name_en
+        if not name:
+            continue
+        # Filtre : le nom doit contenir au moins un mot de la recherche
+        name_lower = (name_fr + " " + name_en).lower()
+        if not any(word in name_lower for word in search_lower.split()):
+            continue
+        brand = p.get("brands", "")
+        n = p.get("nutriments", {})
+        kcal = n.get("energy-kcal_100g", 0)
+        if not kcal:
+            continue  # Skip products with no calorie data
+        results.append({
+            "name": f"{name} ({brand})" if brand else name,
+            "calories": round(kcal),
+            "protein_g": round(n.get("proteins_100g", 0), 1),
+            "carbs_g": round(n.get("carbohydrates_100g", 0), 1),
+            "fat_g": round(n.get("fat_100g", 0), 1),
+            "quantity": p.get("quantity", ""),
+            "image_url": p.get("image_front_small_url", ""),
+        })
+    return results[:15]
 
 
 # --- Recipes ---

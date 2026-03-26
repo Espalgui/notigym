@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
 } from "recharts";
-import { Apple, Plus, Droplets, Target, ChefHat, Star } from "lucide-react";
+import { Apple, Plus, Droplets, Target, ChefHat, Star, Search, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import { useThemeStore } from "@/stores/themeStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -61,6 +61,11 @@ export default function Nutrition() {
   });
   const [goalForm, setGoalForm] = useState({ calories: "2000", protein_g: "150", carbs_g: "250", fat_g: "70", water_goal_ml: "2000" });
   const [customWater, setCustomWater] = useState("");
+  const [foodSearch, setFoodSearch] = useState("");
+  const [foodResults, setFoodResults] = useState<{ name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; image_url?: string }[]>([]);
+  const [searchingFood, setSearchingFood] = useState(false);
+  const searchTimeout = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [per100, setPer100] = useState<{ calories: number; protein_g: number; carbs_g: number; fat_g: number } | null>(null);
   const [reminderMinutes, setReminderMinutes] = useState(
     () => parseInt(localStorage.getItem("hydration_reminder_interval") || "45", 10)
   );
@@ -79,6 +84,53 @@ export default function Nutrition() {
   useEffect(() => {
     api.get("/nutrition/recipes").then((r) => setRecipes(r.data)).catch(() => {});
   }, []);
+
+  const handleFoodSearch = (query: string) => {
+    setFoodSearch(query);
+    if (searchTimeout[0]) clearTimeout(searchTimeout[0]);
+    if (query.length < 2) { setFoodResults([]); return; }
+    setSearchingFood(true);
+    const t = setTimeout(() => {
+      api.get(`/nutrition/search-food?q=${encodeURIComponent(query)}`)
+        .then((r) => setFoodResults(r.data))
+        .catch(() => setFoodResults([]))
+        .finally(() => setSearchingFood(false));
+    }, 400);
+    searchTimeout[0] = t;
+  };
+
+  const selectFood = (food: { name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number }) => {
+    setPer100({ calories: food.calories, protein_g: food.protein_g, carbs_g: food.carbs_g, fat_g: food.fat_g });
+    setEntryForm({
+      ...entryForm,
+      food_name: food.name,
+      quantity: "100",
+      unit: "g",
+      calories: String(food.calories || ""),
+      protein_g: String(food.protein_g || ""),
+      carbs_g: String(food.carbs_g || ""),
+      fat_g: String(food.fat_g || ""),
+    });
+    setFoodSearch("");
+    setFoodResults([]);
+  };
+
+  const handleQuantityChange = (qty: string) => {
+    const q = parseFloat(qty) || 0;
+    if (per100 && q > 0) {
+      const ratio = q / 100;
+      setEntryForm((f) => ({
+        ...f,
+        quantity: qty,
+        calories: String(Math.round(per100.calories * ratio)),
+        protein_g: String(Math.round(per100.protein_g * ratio * 10) / 10),
+        carbs_g: String(Math.round(per100.carbs_g * ratio * 10) / 10),
+        fat_g: String(Math.round(per100.fat_g * ratio * 10) / 10),
+      }));
+    } else {
+      setEntryForm((f) => ({ ...f, quantity: qty }));
+    }
+  };
 
   const handleAddRecipe = async (recipe: Recipe) => {
     try {
@@ -174,7 +226,7 @@ export default function Nutrition() {
           <button onClick={() => setShowGoalForm(true)} className="btn-secondary flex items-center gap-2">
             <Target className="w-4 h-4" /> {t("nutrition.setGoals")}
           </button>
-          <button onClick={() => setShowAddEntry(true)} className="btn-primary flex items-center gap-2">
+          <button onClick={() => { setShowAddEntry(true); setPer100(null); setFoodSearch(""); setFoodResults([]); }} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" /> <span>{t("nutrition.addEntry")}</span>
           </button>
         </div>
@@ -446,12 +498,63 @@ export default function Nutrition() {
           <motion.form initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} onSubmit={handleAddEntry} className="card w-full max-w-md">
             <h2 className="text-lg font-display font-bold mb-4">{t("nutrition.addEntry")}</h2>
             <div className="space-y-3">
+              {/* OpenFoodFacts search */}
+              <div className="relative">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-onair-muted" />
+                  <input
+                    value={foodSearch}
+                    onChange={(e) => handleFoodSearch(e.target.value)}
+                    placeholder={lang?.startsWith("fr") ? "Rechercher un aliment..." : "Search food..."}
+                    className="w-full pl-9 pr-8"
+                  />
+                  {searchingFood && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-onair-muted animate-spin" />}
+                </div>
+                {foodResults.length > 0 && (
+                  <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-onair-surface border border-onair-border rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                    {foodResults.map((f, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => selectFood(f)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-onair-cyan/5 transition-colors border-b border-onair-border/30 last:border-0"
+                      >
+                        {f.image_url && <img src={f.image_url} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{f.name}</p>
+                          <p className="text-[10px] text-onair-muted">
+                            {f.calories} kcal · P {f.protein_g}g · C {f.carbs_g}g · F {f.fat_g}g
+                            <span className="text-onair-muted/50"> /100g</span>
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <select value={entryForm.meal_type} onChange={(e) => setEntryForm({ ...entryForm, meal_type: e.target.value })} className="w-full">
                 {["breakfast", "lunch", "dinner", "snack"].map((m) => (
                   <option key={m} value={m}>{t(`nutrition.mealTypes.${m}` as any)}</option>
                 ))}
               </select>
               <input value={entryForm.food_name} onChange={(e) => setEntryForm({ ...entryForm, food_name: e.target.value })} placeholder="Aliment" required className="w-full" />
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={entryForm.quantity}
+                  onChange={(e) => handleQuantityChange(e.target.value)}
+                  placeholder={lang?.startsWith("fr") ? "Quantité" : "Quantity"}
+                  min={0}
+                  className="flex-1"
+                />
+                <span className="text-sm text-onair-muted">g</span>
+                {per100 && (
+                  <span className="text-[10px] text-onair-muted/50">
+                    ({per100.calories} kcal/100g)
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <input type="number" value={entryForm.calories} onChange={(e) => setEntryForm({ ...entryForm, calories: e.target.value })} placeholder={t("nutrition.calories")} className="w-full" />
                 <input type="number" value={entryForm.protein_g} onChange={(e) => setEntryForm({ ...entryForm, protein_g: e.target.value })} placeholder={`${t("nutrition.protein")} (g)`} className="w-full" />

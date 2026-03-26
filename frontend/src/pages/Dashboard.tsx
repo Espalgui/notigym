@@ -6,12 +6,21 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart,
 } from "recharts";
 import {
-  Dumbbell, Scale, Apple, TrendingUp, Flame, Target, ChevronRight, Zap, Clock,
+  Dumbbell, Scale, Apple, TrendingUp, Flame, Target, ChevronRight, Zap, Clock, X, Play, Star,
 } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { formatWeight, formatDate, formatVolume } from "@/lib/utils";
+
+interface Program {
+  id: string;
+  name: string;
+  program_type: string;
+  is_favorite: boolean;
+  days: { id: string; name: string; exercises: any[] }[];
+}
 
 interface WorkoutStats {
   total_sessions: number;
@@ -41,10 +50,14 @@ export default function Dashboard() {
   const { theme } = useThemeStore();
   const [stats, setStats] = useState<WorkoutStats | null>(null);
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [showProgramPicker, setShowProgramPicker] = useState(false);
+  const [expandedProgram, setExpandedProgram] = useState<string | null>(null);
 
   useEffect(() => {
     api.get("/workouts/stats").then((r) => setStats(r.data)).catch(() => {});
     api.get("/body/measurements?limit=30").then((r) => setMeasurements(r.data)).catch(() => {});
+    api.get("/workouts/programs").then((r) => setPrograms(r.data)).catch(() => {});
   }, []);
 
   const weightData = [...measurements]
@@ -67,27 +80,40 @@ export default function Dashboard() {
     },
   };
 
+  const sortedPrograms = [...programs].sort((a, b) => {
+    if (a.is_favorite !== b.is_favorite) return a.is_favorite ? -1 : 1;
+    return 0;
+  });
+
+  const handleStartSession = () => {
+    if (programs.length === 0) {
+      navigate("/workouts/session");
+    } else {
+      setShowProgramPicker(true);
+    }
+  };
+
   const quickActions = [
     {
       icon: Dumbbell,
       label: t("dashboard.startSession"),
       color: "text-onair-red",
       bg: "from-onair-red/10 to-onair-pink/5",
-      href: "/workouts/session",
+      onClick: handleStartSession,
     },
     {
       icon: Scale,
       label: t("dashboard.logWeight"),
       color: "text-onair-cyan",
       bg: "from-onair-cyan/10 to-onair-purple/5",
-      href: "/body",
+      onClick: () => navigate("/body"),
     },
     {
       icon: Apple,
       label: t("dashboard.logMeal"),
       color: "text-onair-green",
       bg: "from-onair-green/10 to-onair-amber/5",
-      href: "/nutrition",
+      onClick: () => navigate("/nutrition"),
     },
   ];
 
@@ -148,10 +174,10 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <motion.div {...fadeInUp} transition={{ delay: 0.1 }}>
         <div className="grid grid-cols-3 gap-3">
-          {quickActions.map((action) => (
+          {quickActions.map((action, idx) => (
             <button
-              key={action.href}
-              onClick={() => navigate(action.href)}
+              key={idx}
+              onClick={action.onClick}
               className="card-hover flex flex-col items-center gap-3 py-5 cursor-pointer group"
             >
               <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${action.bg} group-hover:scale-110 transition-transform duration-200`}>
@@ -257,6 +283,101 @@ export default function Dashboard() {
           )}
         </div>
       </motion.div>
+
+      {/* Program Picker Modal */}
+      <AnimatePresence>
+        {showProgramPicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60"
+            onClick={() => { setShowProgramPicker(false); setExpandedProgram(null); }}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              className="card w-full max-w-md max-h-[70vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-display font-bold text-lg">{t("dashboard.chooseProgram")}</h3>
+                  <p className="text-xs text-onair-muted mt-1">{t("dashboard.chooseProgramDesc")}</p>
+                </div>
+                <button
+                  onClick={() => { setShowProgramPicker(false); setExpandedProgram(null); }}
+                  className="p-1.5 rounded-lg hover:bg-onair-surface text-onair-muted"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Free session option */}
+              <button
+                onClick={() => {
+                  setShowProgramPicker(false);
+                  navigate("/workouts/session");
+                }}
+                className="w-full text-left px-4 py-3 rounded-xl bg-onair-surface/50 hover:bg-onair-surface transition-colors flex items-center gap-3 mb-3"
+              >
+                <div className="p-2 rounded-lg bg-onair-red/10">
+                  <Play className="w-4 h-4 text-onair-red" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-onair-text">{t("dashboard.freeSession")}</p>
+                  <p className="text-xs text-onair-muted">{t("dashboard.freeSessionDesc")}</p>
+                </div>
+              </button>
+
+              {/* Programs list */}
+              <div className="overflow-y-auto flex-1 space-y-2">
+                {sortedPrograms.map((program) => (
+                  <div key={program.id} className="rounded-xl border border-onair-border/50 overflow-hidden">
+                    <button
+                      onClick={() => setExpandedProgram(expandedProgram === program.id ? null : program.id)}
+                      className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-onair-surface/50 transition-colors"
+                    >
+                      {program.is_favorite && (
+                        <Star className="w-3.5 h-3.5 text-onair-amber fill-current flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-onair-text truncate">{program.name}</p>
+                        <p className="text-xs text-onair-muted">
+                          {program.days.length} {t("workouts.days")}
+                        </p>
+                      </div>
+                      <ChevronRight className={`w-4 h-4 text-onair-muted transition-transform ${expandedProgram === program.id ? "rotate-90" : ""}`} />
+                    </button>
+                    {expandedProgram === program.id && (
+                      <div className="border-t border-onair-border/50 bg-onair-surface/20">
+                        {program.days.map((day) => (
+                          <button
+                            key={day.id}
+                            onClick={() => {
+                              setShowProgramPicker(false);
+                              setExpandedProgram(null);
+                              navigate(`/workouts/session?dayId=${day.id}`);
+                            }}
+                            className="w-full text-left px-6 py-2.5 flex items-center justify-between hover:bg-onair-surface/50 transition-colors group"
+                          >
+                            <div>
+                              <p className="text-sm text-onair-text">{day.name}</p>
+                              <p className="text-xs text-onair-muted">{day.exercises.length} {t("workouts.exercises")}</p>
+                            </div>
+                            <Play className="w-3.5 h-3.5 text-onair-red opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

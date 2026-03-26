@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Dumbbell, Calendar, Trophy, ChevronRight, Play, Sparkles, Download, Clock, Target, ChevronDown, Flame } from "lucide-react";
+import { Plus, Dumbbell, Calendar, Trophy, ChevronRight, Play, Sparkles, Download, Clock, Target, ChevronDown, Flame, Star, X } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { formatDateTime, formatDuration, formatVolume } from "@/lib/utils";
@@ -12,6 +12,7 @@ interface Program {
   name: string;
   program_type: string;
   is_active: boolean;
+  is_favorite: boolean;
   days: { id: string; name: string; exercises: any[] }[];
   created_at: string;
 }
@@ -72,6 +73,7 @@ export default function Workouts() {
   const [exerciseMap, setExerciseMap] = useState<Record<string, ExerciseRef>>({});
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [dayPickerProgram, setDayPickerProgram] = useState<Program | null>(null);
 
   useEffect(() => {
     api.get("/workouts/programs").then((r) => setPrograms(r.data)).catch(() => {});
@@ -108,6 +110,23 @@ export default function Workouts() {
     bro_split:      "bg-onair-purple/10",
     custom:         "bg-onair-amber/10",
   };
+
+  const toggleFavorite = async (e: React.MouseEvent, programId: string) => {
+    e.stopPropagation();
+    try {
+      const { data } = await api.patch(`/workouts/programs/${programId}/favorite`);
+      setPrograms((prev) =>
+        prev.map((p) => (p.id === programId ? { ...p, is_favorite: data.is_favorite } : p))
+      );
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
+
+  const sortedPrograms = [...programs].sort((a, b) => {
+    if (a.is_favorite !== b.is_favorite) return a.is_favorite ? -1 : 1;
+    return 0;
+  });
 
   const handleImport = async (templateId: string) => {
     setImporting(templateId);
@@ -228,7 +247,7 @@ export default function Workouts() {
                 {t("workouts.myPrograms")}
               </h2>
             )}
-            {programs.length === 0 ? (
+            {sortedPrograms.length === 0 ? (
               <div className="card text-center py-12">
                 <Dumbbell className="w-12 h-12 mx-auto text-onair-muted/30 mb-4" />
                 <p className="text-onair-muted mb-4">{t("common.noData")}</p>
@@ -237,7 +256,7 @@ export default function Workouts() {
                 </button>
               </div>
             ) : (
-              programs.map((program, i) => (
+              sortedPrograms.map((program, i) => (
                 <motion.div
                   key={program.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -268,7 +287,18 @@ export default function Workouts() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={(e) => { e.stopPropagation(); navigate("/workouts/session"); }}
+                        onClick={(e) => toggleFavorite(e, program.id)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          program.is_favorite
+                            ? "bg-onair-amber/20 text-onair-amber"
+                            : "text-onair-muted hover:text-onair-amber hover:bg-onair-amber/10"
+                        }`}
+                        title={program.is_favorite ? t("workouts.removeFavorite") : t("workouts.addFavorite")}
+                      >
+                        <Star className={`w-4 h-4 ${program.is_favorite ? "fill-current" : ""}`} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDayPickerProgram(program); }}
                         className="p-2 rounded-lg bg-onair-red/10 text-onair-red hover:bg-onair-red/20 transition-colors"
                       >
                         <Play className="w-5 h-5" />
@@ -421,6 +451,60 @@ export default function Workouts() {
           <p className="text-onair-muted">{t("common.noData")}</p>
         </div>
       )}
+
+      {/* Day Picker Modal */}
+      <AnimatePresence>
+        {dayPickerProgram && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+            onClick={() => setDayPickerProgram(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="card w-full max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-display font-bold text-lg">{t("workouts.chooseDay")}</h3>
+                  <p className="text-xs text-onair-muted mt-1">{dayPickerProgram.name}</p>
+                </div>
+                <button
+                  onClick={() => setDayPickerProgram(null)}
+                  className="p-1.5 rounded-lg hover:bg-onair-surface text-onair-muted"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="space-y-2">
+                {dayPickerProgram.days.map((day) => (
+                  <button
+                    key={day.id}
+                    onClick={() => {
+                      setDayPickerProgram(null);
+                      navigate(`/workouts/session?dayId=${day.id}`);
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-xl hover:bg-onair-surface transition-colors flex items-center justify-between group"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-onair-text">{day.name}</p>
+                      <p className="text-xs text-onair-muted">
+                        {day.exercises.length} {t("workouts.exercises")}
+                      </p>
+                    </div>
+                    <Play className="w-4 h-4 text-onair-red opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

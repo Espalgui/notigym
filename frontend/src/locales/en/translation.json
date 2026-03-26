@@ -82,7 +82,11 @@
     "quickActions": "Quick Actions",
     "startSession": "Start Session",
     "logWeight": "Log Weight",
-    "logMeal": "Log Meal"
+    "logMeal": "Log Meal",
+    "chooseProgram": "Choose a program",
+    "chooseProgramDesc": "Select a program and a day to prefill your session.",
+    "freeSession": "Free session",
+    "freeSessionDesc": "Start without a program"
   },
   "workouts": {
     "title": "Workouts",
@@ -143,8 +147,14 @@
       "continue": "Continue",
       "confirmTitle": "Save session?",
       "confirmSummary": "{{exercises}} exercise(s), {{sets}} set(s) – {{duration}}",
-      "confirmHint": "Only sets with weight and reps will be saved."
+      "confirmHint": "Only sets with weight and reps will be saved.",
+      "prefilled": "Exercises prefilled from the program"
     },
+    "favorite": "Favorite",
+    "addFavorite": "Add to favorites",
+    "removeFavorite": "Remove from favorites",
+    "chooseDay": "Choose a day",
+    "chooseDayDesc": "Which day would you like to train?",
     "types": {
       "push_pull_legs": "Push/Pull/Legs",
       "upper_lower": "Upper/Lower",
@@ -258,6 +268,10 @@
   "hydration": {
     "reminder": "Hydration reminder",
     "reminderEvery": "Remind every"
+  },
+  "timer": {
+    "rest": "Rest",
+    "title": "Timers"
   },
   "tabata": {
     "title": "Tabata Timer",

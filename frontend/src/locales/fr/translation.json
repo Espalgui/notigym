@@ -82,7 +82,11 @@
     "quickActions": "Actions rapides",
     "startSession": "Démarrer une séance",
     "logWeight": "Enregistrer une pesée",
-    "logMeal": "Ajouter un repas"
+    "logMeal": "Ajouter un repas",
+    "chooseProgram": "Choisir un programme",
+    "chooseProgramDesc": "Sélectionnez un programme et un jour pour pré-remplir votre séance.",
+    "freeSession": "Séance libre",
+    "freeSessionDesc": "Commencer sans programme"
   },
   "workouts": {
     "title": "Entraînements",
@@ -127,6 +131,11 @@
       "totalVolume": "Volume total",
       "warmup": "Échauffement"
     },
+    "favorite": "Favori",
+    "addFavorite": "Ajouter aux favoris",
+    "removeFavorite": "Retirer des favoris",
+    "chooseDay": "Choisir un jour",
+    "chooseDayDesc": "Quel jour souhaitez-vous entraîner ?",
     "session": {
       "description": "Enregistrez vos performances en temps réel",
       "started": "Séance démarrée !",
@@ -143,7 +152,8 @@
       "continue": "Continuer",
       "confirmTitle": "Enregistrer la séance ?",
       "confirmSummary": "{{exercises}} exercice(s), {{sets}} série(s) – {{duration}}",
-      "confirmHint": "Seules les séries avec un poids et des reps seront sauvegardées."
+      "confirmHint": "Seules les séries avec un poids et des reps seront sauvegardées.",
+      "prefilled": "Exercices pré-remplis depuis le programme"
     },
     "types": {
       "push_pull_legs": "Push/Pull/Legs",
@@ -258,6 +268,10 @@
   "hydration": {
     "reminder": "Rappel hydratation",
     "reminderEvery": "Rappel toutes les"
+  },
+  "timer": {
+    "rest": "Repos",
+    "title": "Timers"
   },
   "tabata": {
     "title": "Tabata Timer",

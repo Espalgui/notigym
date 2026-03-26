@@ -120,6 +120,21 @@ async def update_program(
     return result.scalar_one()
 
 
+@router.patch("/programs/{program_id}/favorite")
+async def toggle_favorite(
+    program_id: uuid_mod.UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(WorkoutProgram).where(WorkoutProgram.id == program_id))
+    program = result.scalar_one_or_none()
+    if not program or program.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
+    program.is_favorite = not program.is_favorite
+    await db.flush()
+    return {"is_favorite": program.is_favorite}
+
+
 @router.delete("/programs/{program_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_program(
     program_id: uuid_mod.UUID,

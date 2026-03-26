@@ -76,6 +76,7 @@ class WorkoutProgramUpdate(BaseModel):
     program_type: str | None = None
     is_active: bool | None = None
     is_public: bool | None = None
+    is_favorite: bool | None = None
 
 
 class WorkoutProgramResponse(BaseModel):
@@ -86,6 +87,7 @@ class WorkoutProgramResponse(BaseModel):
     program_type: str
     is_active: bool
     is_public: bool
+    is_favorite: bool
     likes_count: int
     created_at: datetime
     updated_at: datetime

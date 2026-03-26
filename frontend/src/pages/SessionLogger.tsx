@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,10 +13,12 @@ import {
   CheckCircle2,
   Dumbbell,
   Search,
+  Info,
 } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { formatDuration } from "@/lib/utils";
+import SessionTimers from "@/components/workout/SessionTimers";
 
 interface Exercise {
   id: string;
@@ -43,10 +45,26 @@ function exName(ex: Exercise | undefined, lang: string): string {
   return lang === "fr" ? ex.name_fr : ex.name_en;
 }
 
+interface ProgramDay {
+  id: string;
+  name: string;
+  exercises: {
+    exercise_id: string;
+    exercise_order: number;
+    sets: number;
+    reps_min: number;
+    reps_max: number;
+    exercise?: Exercise;
+  }[];
+}
+
 export default function SessionLogger() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith("fr") ? "fr" : "en";
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const dayId = searchParams.get("dayId");
+
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sets, setSets] = useState<SetEntry[]>([]);
   const [startTime, setStartTime] = useState<Date | null>(null);
@@ -56,6 +74,7 @@ export default function SessionLogger() {
   const [saving, setSaving] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,7 +87,7 @@ export default function SessionLogger() {
 
   useEffect(() => {
     api
-      .get("/exercises")
+      .get("/exercises?limit=500")
       .then((r) => setExercises(r.data))
       .catch(() => {});
   }, []);
@@ -85,10 +104,48 @@ export default function SessionLogger() {
     try {
       const { data } = await api.post("/workouts/sessions", {
         started_at: new Date().toISOString(),
+        program_day_id: dayId || undefined,
       });
       setSessionId(data.id);
       setStartTime(new Date());
       toast.success(t("workouts.session.started"));
+
+      // Pre-fill exercises from program day
+      if (dayId && exercises.length > 0) {
+        try {
+          const programsRes = await api.get("/workouts/programs");
+          const programs = programsRes.data;
+          let day: ProgramDay | null = null;
+          for (const p of programs) {
+            const found = p.days.find((d: ProgramDay) => d.id === dayId);
+            if (found) { day = found; break; }
+          }
+          if (day && day.exercises.length > 0) {
+            const prefillSets: SetEntry[] = [];
+            for (const pe of day.exercises.sort((a, b) => a.exercise_order - b.exercise_order)) {
+              const ex = exercises.find((e) => e.id === pe.exercise_id) || pe.exercise;
+              if (!ex) continue;
+              const name = exName(ex, lang);
+              for (let s = 1; s <= pe.sets; s++) {
+                prefillSets.push({
+                  exercise_id: pe.exercise_id,
+                  exercise_name: name,
+                  set_number: s,
+                  reps: 0,
+                  weight_kg: 0,
+                  duration_seconds: 0,
+                  rpe: null,
+                  is_warmup: false,
+                });
+              }
+            }
+            if (prefillSets.length > 0) {
+              setSets(prefillSets);
+              setPrefilled(true);
+            }
+          }
+        } catch { /* ignore prefill errors */ }
+      }
     } catch {
       toast.error(t("common.error"));
     }
@@ -270,6 +327,16 @@ export default function SessionLogger() {
           {formatDuration(elapsed)}
         </div>
       </div>
+
+      {/* Prefilled info banner */}
+      {prefilled && (
+        <div className="card !py-3 flex items-center gap-3 border-onair-cyan/30 bg-onair-cyan/5">
+          <Info className="w-5 h-5 text-onair-cyan flex-shrink-0" />
+          <span className="text-sm text-onair-cyan font-medium">
+            {t("workouts.session.prefilled")}
+          </span>
+        </div>
+      )}
 
       {/* Exercise list grouped */}
       {groupedSets.length > 0 ? (
@@ -456,6 +523,9 @@ export default function SessionLogger() {
           </div>
         </div>
       )}
+
+      {/* Session Timers (floating) */}
+      <SessionTimers />
 
       {/* Bottom action bar */}
       <div className="fixed bottom-0 left-0 right-0 z-20 p-4 glass border-t border-onair-border">

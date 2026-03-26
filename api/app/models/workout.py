@@ -18,6 +18,7 @@ class WorkoutProgram(Base):
     program_type: Mapped[str] = mapped_column(String(50), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     is_public: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    is_favorite: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     likes_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

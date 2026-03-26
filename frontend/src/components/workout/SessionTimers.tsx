@@ -517,13 +517,33 @@ export default function SessionTimers() {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TimerTab>("rest");
 
+  // Keep button position stable during pinch-zoom
+  const [vvOffset, setVvOffset] = useState({ bottom: 80, right: 16 });
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      setVvOffset({
+        bottom: window.innerHeight - vv.height - vv.offsetTop + 80,
+        right: 16,
+      });
+    };
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+
   return (
     <>
       {/* Floating toggle button */}
       <button
         onClick={() => setOpen(!open)}
+        style={{ bottom: vvOffset.bottom, right: vvOffset.right }}
         className={cn(
-          "fixed bottom-20 right-4 z-30 p-3 rounded-full shadow-lg transition-all",
+          "fixed z-30 p-3 rounded-full shadow-lg transition-all",
           open
             ? "bg-onair-surface text-onair-muted border border-onair-border"
             : "bg-onair-cyan text-white hover:bg-onair-cyan/90"
@@ -539,7 +559,8 @@ export default function SessionTimers() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
-            className="fixed bottom-36 right-4 left-4 sm:left-auto sm:w-80 z-30 card shadow-2xl border border-onair-border"
+            style={{ bottom: vvOffset.bottom + 64, right: vvOffset.right }}
+            className="fixed left-4 sm:left-auto sm:w-80 z-30 card shadow-2xl border border-onair-border"
           >
             {/* Tabs */}
             <div className="flex gap-1 mb-4 p-1 bg-onair-surface/50 rounded-lg">

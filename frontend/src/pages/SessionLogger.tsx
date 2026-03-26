@@ -38,6 +38,9 @@ interface SetEntry {
   duration_seconds: number;
   rpe: number | null;
   is_warmup: boolean;
+  target_reps?: number;
+  target_duration?: number;
+  is_validated?: boolean;
 }
 
 function exName(ex: Exercise | undefined, lang: string): string {
@@ -54,6 +57,8 @@ interface ProgramDay {
     sets: number;
     reps_min: number;
     reps_max: number;
+    rest_seconds?: number;
+    notes?: string;
     exercise?: Exercise;
   }[];
 }
@@ -132,6 +137,7 @@ export default function SessionLogger() {
               const ex = exercises.find((e) => e.id === pe.exercise_id) || pe.exercise;
               if (!ex) continue;
               const name = exName(ex, lang);
+              const isDuration = pe.notes?.includes("secondes") || pe.notes?.includes("seconds") || pe.notes?.includes("maintien") || pe.notes?.includes("hold") || pe.notes?.includes("sec");
               for (let s = 1; s <= pe.sets; s++) {
                 prefillSets.push({
                   exercise_id: pe.exercise_id,
@@ -142,6 +148,9 @@ export default function SessionLogger() {
                   duration_seconds: 0,
                   rpe: null,
                   is_warmup: false,
+                  target_reps: isDuration ? 0 : pe.reps_min,
+                  target_duration: isDuration ? pe.reps_min : 0,
+                  is_validated: false,
                 });
               }
             }
@@ -379,24 +388,27 @@ export default function SessionLogger() {
               </div>
               <div className="divide-y divide-onair-border/50">
                 {/* Column headers */}
-                <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem] gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
+                <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem_2.5rem] gap-1.5 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
                   <span className="text-center">#</span>
                   <span className="text-center">{t("workouts.weight")}</span>
                   <span className="text-center">{t("workouts.reps")}</span>
                   <span className="text-center">Sec</span>
                   <span className="text-center">W</span>
+                  <span className="text-center"><CheckCircle2 className="w-3 h-3 mx-auto" /></span>
                   <span />
                 </div>
                 {group.entries.map(({ set: s, globalIdx }) => {
                   const isValid = s.reps > 0 || s.duration_seconds > 0;
+                  const hasTarget = (s.target_reps && s.target_reps > 0) || (s.target_duration && s.target_duration > 0);
                   return (
                     <div
                       key={globalIdx}
-                      className={`grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem] gap-2 px-4 py-2.5 items-center transition-colors ${
-                        isValid ? "bg-onair-green/5" : ""
-                      }`}
+                      className={`grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem_2.5rem] gap-1.5 px-4 py-2.5 items-center transition-colors ${
+                        s.is_validated ? "bg-onair-green/10" : isValid ? "bg-onair-green/5" : ""
+                      } ${s.is_warmup ? "border-l-2 border-onair-amber" : ""}`}
                     >
                       <span className="text-xs text-onair-muted text-center font-mono">
+                        {s.is_warmup && <span className="text-onair-amber text-[8px] align-super">*</span>}
                         {s.set_number}
                       </span>
                       <input
@@ -417,7 +429,7 @@ export default function SessionLogger() {
                           updateSet(globalIdx, "reps", +e.target.value)
                         }
                         className="text-center text-sm p-1.5 rounded-lg"
-                        placeholder="reps"
+                        placeholder={s.target_reps ? `${s.target_reps}` : "reps"}
                         min={0}
                       />
                       <input
@@ -427,22 +439,54 @@ export default function SessionLogger() {
                           updateSet(globalIdx, "duration_seconds", +e.target.value)
                         }
                         className="text-center text-sm p-1.5 rounded-lg"
-                        placeholder="sec"
+                        placeholder={s.target_duration ? `${s.target_duration}` : "sec"}
                         min={0}
                       />
                       <button
                         onClick={() =>
                           updateSet(globalIdx, "is_warmup", !s.is_warmup)
                         }
-                        className={`text-xs p-1.5 rounded-lg transition-colors ${
+                        className={`relative text-xs p-1.5 rounded-lg transition-colors group ${
                           s.is_warmup
                             ? "bg-onair-amber/20 text-onair-amber"
                             : "text-onair-muted hover:text-onair-amber hover:bg-onair-amber/10"
                         }`}
-                        title="Warm-up"
                       >
                         W
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-onair-surface border border-onair-border text-[10px] text-onair-text px-2 py-1 rounded whitespace-nowrap opacity-0 group-active:opacity-100 transition-opacity pointer-events-none z-10">
+                          {lang === "fr" ? "Série de chauffe" : "Warm-up set"}
+                        </span>
                       </button>
+                      {hasTarget ? (
+                        <button
+                          onClick={() => {
+                            setSets((prev) => {
+                              const updated = [...prev];
+                              const entry = updated[globalIdx];
+                              if (entry.is_validated) {
+                                entry.reps = 0;
+                                entry.duration_seconds = 0;
+                                entry.is_validated = false;
+                              } else {
+                                if (entry.target_reps) entry.reps = entry.target_reps;
+                                if (entry.target_duration) entry.duration_seconds = entry.target_duration;
+                                entry.is_validated = true;
+                              }
+                              return updated;
+                            });
+                          }}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            s.is_validated
+                              ? "bg-onair-green/20 text-onair-green"
+                              : "text-onair-muted hover:text-onair-green hover:bg-onair-green/10"
+                          }`}
+                          title={lang === "fr" ? "Valider avec la cible" : "Validate with target"}
+                        >
+                          <CheckCircle2 className={`w-4 h-4 ${s.is_validated ? "fill-onair-green/30" : ""}`} />
+                        </button>
+                      ) : (
+                        <span />
+                      )}
                       <button
                         onClick={() => removeSet(globalIdx)}
                         className="p-1.5 rounded-lg text-onair-muted hover:text-onair-red hover:bg-onair-red/10 transition-colors"

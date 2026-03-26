@@ -14,6 +14,7 @@ import SessionLogger from "@/pages/SessionLogger";
 import BodyTracking from "@/pages/BodyTracking";
 import Nutrition from "@/pages/Nutrition";
 import RecipesPage from "@/pages/Recipes";
+import Notes from "@/pages/Notes";
 import Community from "@/pages/Community";
 import Activity from "@/pages/Activity";
 import Statistics from "@/pages/Statistics";
@@ -112,6 +113,7 @@ export default function App() {
           <Route path="body" element={<BodyTracking />} />
           <Route path="nutrition" element={<Nutrition />} />
           <Route path="recipes" element={<RecipesPage />} />
+          <Route path="notes" element={<Notes />} />
           <Route path="community" element={<Community />} />
           <Route path="notifications" element={<NotificationsSettings />} />
           <Route path="profile" element={<Profile />} />

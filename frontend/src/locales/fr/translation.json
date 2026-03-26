@@ -22,7 +22,9 @@
     "sectionSport": "Sport",
     "sectionBody": "Forme physique",
     "sectionNutrition": "Nutrition",
-    "sectionSocial": "Social"
+    "sectionSocial": "Social",
+    "sectionPersonal": "Perso",
+    "notes": "Bloc-notes"
   },
   "auth": {
     "login": "Connexion",

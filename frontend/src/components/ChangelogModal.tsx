@@ -1,0 +1,127 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, X } from "lucide-react";
+
+interface ChangelogEntry {
+  version: string;
+  date: string;
+  title_fr: string;
+  title_en: string;
+  changes_fr: string[];
+  changes_en: string[];
+}
+
+const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "2.0.0",
+    date: "2026-03-26",
+    title_fr: "Mise à jour majeure",
+    title_en: "Major Update",
+    changes_fr: [
+      "78 programmes Street Workout avec images Madbarz",
+      "157 recettes complètes avec ingrédients et étapes de préparation",
+      "Page Recettes dédiée avec favoris et partage de recettes",
+      "Recherche aliments OpenFoodFacts avec calcul automatique des macros",
+      "Page Timers unifiée : timer classique + Tabata avec presets sauvegardés",
+      "Intégration Strava : synchronisation automatique des activités",
+      "Navigation repensée avec sections collapsibles",
+      "Onglet Favoris pour les programmes et les recettes",
+      "Cibles reps/temps avec validation en un clic pendant les séances",
+      "Image de la routine visible pendant l'entraînement (cliquable en plein écran)",
+    ],
+    changes_en: [
+      "78 Street Workout programs with Madbarz images",
+      "157 complete recipes with ingredients and preparation steps",
+      "Dedicated Recipes page with favorites and recipe sharing",
+      "OpenFoodFacts food search with automatic macro calculation",
+      "Unified Timers page: classic timer + Tabata with saved presets",
+      "Strava integration: automatic activity sync",
+      "Redesigned navigation with collapsible sections",
+      "Favorites tab for programs and recipes",
+      "Target reps/duration with one-click validation during sessions",
+      "Routine image visible during workout (clickable fullscreen)",
+    ],
+  },
+];
+
+const CURRENT_VERSION = CHANGELOG[0].version;
+const STORAGE_KEY = "notigym_last_seen_version";
+
+export default function ChangelogModal() {
+  const [show, setShow] = useState(false);
+  const [lang, setLang] = useState("fr");
+
+  useEffect(() => {
+    const storedLang = localStorage.getItem("i18nextLng") || "fr";
+    setLang(storedLang.startsWith("fr") ? "fr" : "en");
+
+    const lastSeen = localStorage.getItem(STORAGE_KEY);
+    if (lastSeen !== CURRENT_VERSION) {
+      // Small delay so the app loads first
+      const timer = setTimeout(() => setShow(true), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleClose = () => {
+    localStorage.setItem(STORAGE_KEY, CURRENT_VERSION);
+    setShow(false);
+  };
+
+  const entry = CHANGELOG[0];
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" onClick={handleClose}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="card w-full max-w-md max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-onair-cyan/10">
+                  <Sparkles className="w-5 h-5 text-onair-cyan" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-display font-bold">
+                    {lang === "fr" ? entry.title_fr : entry.title_en}
+                  </h2>
+                  <p className="text-xs text-onair-muted">v{entry.version} — {entry.date}</p>
+                </div>
+              </div>
+              <button onClick={handleClose} className="text-onair-muted hover:text-onair-text p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <ul className="space-y-2.5">
+              {(lang === "fr" ? entry.changes_fr : entry.changes_en).map((change, i) => (
+                <motion.li
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 + i * 0.05 }}
+                  className="flex items-start gap-3 text-sm"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-onair-cyan flex-shrink-0 mt-2" />
+                  {change}
+                </motion.li>
+              ))}
+            </ul>
+
+            <button
+              onClick={handleClose}
+              className="btn-primary w-full mt-5"
+            >
+              {lang === "fr" ? "C'est noté !" : "Got it!"}
+            </button>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}

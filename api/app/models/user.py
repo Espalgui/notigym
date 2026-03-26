@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, Float, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,6 +34,10 @@ class User(Base):
     totp_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
     is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     backup_codes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    strava_athlete_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    strava_access_token: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    strava_refresh_token: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    strava_token_expires_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

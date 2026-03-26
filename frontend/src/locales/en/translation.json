@@ -22,7 +22,9 @@
     "sectionSport": "Sport",
     "sectionBody": "Body",
     "sectionNutrition": "Nutrition",
-    "sectionSocial": "Social"
+    "sectionSocial": "Social",
+    "sectionPersonal": "Personal",
+    "notes": "Notes"
   },
   "auth": {
     "login": "Login",

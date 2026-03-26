@@ -21,6 +21,7 @@ import {
   Bell,
   ChevronDown,
   ChefHat,
+  StickyNote,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { ShieldCheck } from "lucide-react";
@@ -65,6 +66,12 @@ const navSections = [
     label: "nav.sectionSocial",
     items: [
       { to: "/community", icon: Users, key: "nav.community", accent: null },
+    ],
+  },
+  {
+    label: "nav.sectionPersonal",
+    items: [
+      { to: "/notes", icon: StickyNote, key: "nav.notes", accent: "amber" },
     ],
   },
 ];

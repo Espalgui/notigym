@@ -1,0 +1,4 @@
+ALTER TABLE users ADD COLUMN IF NOT EXISTS strava_athlete_id INTEGER;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS strava_access_token VARCHAR(200);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS strava_refresh_token VARCHAR(200);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS strava_token_expires_at INTEGER;

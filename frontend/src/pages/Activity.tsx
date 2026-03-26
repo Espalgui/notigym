@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { useThemeStore } from "@/stores/themeStore";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 interface ActivityEntry {
@@ -76,6 +77,8 @@ export default function Activity() {
   const { t, i18n } = useTranslation();
   const { theme } = useThemeStore();
   const isDark = theme === "dark";
+  const lang = i18n.language?.startsWith("fr") ? "fr" : "en";
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [selectedDate, setSelectedDate] = useState(toLocalDateString(new Date()));
   const [entry, setEntry] = useState<ActivityEntry | null>(null);
@@ -83,6 +86,10 @@ export default function Activity() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"today" | "history">("today");
+
+  // Strava
+  const [stravaConnected, setStravaConnected] = useState(false);
+  const [stravaSyncing, setStravaSyncing] = useState(false);
 
   const [form, setForm] = useState<Record<string, string>>({
     steps: "",
@@ -144,6 +151,62 @@ export default function Activity() {
     fetchHistory();
     fetchSummary();
   }, [fetchHistory, fetchSummary]);
+
+  // Strava status check + auto-sync
+  useEffect(() => {
+    api.get("/strava/status").then((r) => {
+      setStravaConnected(r.data.connected);
+      if (r.data.connected) {
+        api.post("/strava/sync?days=7")
+          .then(() => { fetchDayData(selectedDate); fetchHistory(); fetchSummary(); })
+          .catch(() => {});
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Handle Strava OAuth callback
+  const [stravaCallbackDone, setStravaCallbackDone] = useState(false);
+  useEffect(() => {
+    const code = searchParams.get("code");
+    const stravaCallback = searchParams.get("strava_callback");
+    if (code && stravaCallback && !stravaCallbackDone) {
+      setStravaCallbackDone(true);
+      setSearchParams({});
+      api.post(`/strava/callback?code=${code}`)
+        .then(() => {
+          setStravaConnected(true);
+          toast.success(lang === "fr" ? "Strava connecté !" : "Strava connected!");
+        })
+        .catch(() => toast.error(lang === "fr" ? "Erreur de connexion Strava" : "Strava connection failed"));
+    }
+  }, [searchParams, stravaCallbackDone]);
+
+  const handleStravaConnect = async () => {
+    try {
+      const { data } = await api.get("/strava/connect");
+      window.location.href = data.url;
+    } catch { toast.error("Error"); }
+  };
+
+  const handleStravaSync = async () => {
+    setStravaSyncing(true);
+    try {
+      const { data } = await api.post("/strava/sync?days=7");
+      toast.success(lang === "fr" ? `${data.activities_count} activités synchronisées` : `${data.activities_count} activities synced`);
+      await fetchDayData(selectedDate);
+      await fetchHistory();
+      await fetchSummary();
+    } catch { toast.error("Error"); }
+    finally { setStravaSyncing(false); }
+  };
+
+  const handleStravaDisconnect = async () => {
+    try {
+      await api.delete("/strava/disconnect");
+      setStravaConnected(false);
+      toast.success(lang === "fr" ? "Strava déconnecté" : "Strava disconnected");
+    } catch { toast.error("Error"); }
+  };
 
   const changeDate = (delta: number) => {
     const d = new Date(selectedDate);
@@ -227,6 +290,40 @@ export default function Activity() {
           <p className="text-sm text-onair-muted mt-1">{t("activity.subtitle")}</p>
         </div>
 
+        {/* Strava */}
+        <div className="flex items-center gap-2">
+          {stravaConnected ? (
+            <>
+              <button
+                onClick={handleStravaSync}
+                disabled={stravaSyncing}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-[#FC4C02]/10 text-[#FC4C02] hover:bg-[#FC4C02]/20 transition-colors disabled:opacity-50"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+                {stravaSyncing ? "..." : "Sync Strava"}
+              </button>
+              <button
+                onClick={handleStravaDisconnect}
+                className="text-xs text-onair-muted hover:text-onair-red transition-colors"
+                title={lang === "fr" ? "Déconnecter" : "Disconnect"}
+              >
+                ×
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleStravaConnect}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-[#FC4C02]/10 text-[#FC4C02] hover:bg-[#FC4C02]/20 transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+              {lang === "fr" ? "Connecter Strava" : "Connect Strava"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div />
         <div className="flex gap-2">
           {(["today", "history"] as const).map((k) => (
             <button
@@ -433,6 +530,9 @@ export default function Activity() {
                     <p className="text-xs text-onair-muted uppercase">
                       {formatShortDate(item.date).split(" ").slice(1).join(" ")}
                     </p>
+                    {item.source === "strava" && (
+                      <span className="text-[9px] text-[#FC4C02] font-bold">STRAVA</span>
+                    )}
                   </div>
 
                   <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-sm">

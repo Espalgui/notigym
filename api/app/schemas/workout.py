@@ -68,12 +68,14 @@ class WorkoutProgramCreate(BaseModel):
     name: str
     description: str | None = None
     program_type: str
+    image_url: str | None = None
 
 
 class WorkoutProgramUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     program_type: str | None = None
+    image_url: str | None = None
     is_active: bool | None = None
     is_public: bool | None = None
     is_favorite: bool | None = None
@@ -85,6 +87,7 @@ class WorkoutProgramResponse(BaseModel):
     name: str
     description: str | None = None
     program_type: str
+    image_url: str | None = None
     is_active: bool
     is_public: bool
     is_favorite: bool

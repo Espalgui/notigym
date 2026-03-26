@@ -589,9 +589,11 @@ TEMPLATES: list[dict[str, Any]] = [
 
 def get_templates_for_user(goal: str | None, training_type: str | None, gender: str | None) -> list[dict]:
     """Retourne les templates adaptés au profil de l'utilisateur, du plus pertinent au moins."""
+    from app.streetworkout_templates import STREET_WORKOUT_TEMPLATES
+    all_templates = TEMPLATES + STREET_WORKOUT_TEMPLATES
     results = []
 
-    for t in TEMPLATES:
+    for t in all_templates:
         # Filtre genre : si le template est réservé à un genre spécifique, l'exclure si ça ne correspond pas
         if t["genders"] and gender not in t["genders"]:
             continue

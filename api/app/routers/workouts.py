@@ -582,6 +582,8 @@ async def list_templates(
             "goals": t["goals"],
             "training_types": t["training_types"],
             "genders": t["genders"],
+            "image_url": t.get("image_url"),
+            "difficulty": t.get("difficulty"),
         })
     return result
 
@@ -593,10 +595,11 @@ async def import_template(
     db: AsyncSession = Depends(get_db),
 ):
     """Clone un template en programme personnel pour l'utilisateur."""
-    all_templates = get_templates_for_user(None, None, None)
     # Cherche dans tous les templates (sans filtre genre pour le cas où l'utilisateur force l'import)
     from app.workout_templates import TEMPLATES
-    template = next((t for t in TEMPLATES if t["id"] == template_id), None)
+    from app.streetworkout_templates import STREET_WORKOUT_TEMPLATES
+    all_templates = TEMPLATES + STREET_WORKOUT_TEMPLATES
+    template = next((t for t in all_templates if t["id"] == template_id), None)
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
@@ -609,6 +612,7 @@ async def import_template(
         name=name,
         description=template[f"description_{lang}"] if f"description_{lang}" in template else template["description_fr"],
         program_type=template["program_type"],
+        image_url=template.get("image_url"),
     )
     db.add(program)
     await db.flush()

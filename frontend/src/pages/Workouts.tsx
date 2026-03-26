@@ -11,6 +11,7 @@ interface Program {
   id: string;
   name: string;
   program_type: string;
+  image_url?: string;
   is_active: boolean;
   is_favorite: boolean;
   days: { id: string; name: string; exercises: any[] }[];
@@ -28,6 +29,8 @@ interface Template {
   goals: string[];
   training_types: string[];
   genders: string[];
+  image_url?: string;
+  difficulty?: string;
 }
 
 interface SessionSet {
@@ -68,7 +71,7 @@ export default function Workouts() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [importing, setImporting] = useState<string | null>(null);
-  const [tab, setTab] = useState<"programs" | "history" | "records">("programs");
+  const [tab, setTab] = useState<"programs" | "favorites" | "history" | "records">("programs");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [exerciseMap, setExerciseMap] = useState<Record<string, ExerciseRef>>({});
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
@@ -96,20 +99,30 @@ export default function Workouts() {
   }, [tab]);
 
   const typeColors: Record<string, string> = {
-    push_pull_legs: "text-onair-red",
-    upper_lower:    "text-onair-cyan",
-    full_body:      "text-onair-green",
-    bro_split:      "text-onair-purple",
-    custom:         "text-onair-amber",
+    push_pull_legs:  "text-onair-red",
+    upper_lower:     "text-onair-cyan",
+    full_body:       "text-onair-green",
+    bro_split:       "text-onair-purple",
+    custom:          "text-onair-amber",
+    street_workout:  "text-orange-400",
   };
 
   const typeBg: Record<string, string> = {
-    push_pull_legs: "bg-onair-red/10",
-    upper_lower:    "bg-onair-cyan/10",
-    full_body:      "bg-onair-green/10",
-    bro_split:      "bg-onair-purple/10",
-    custom:         "bg-onair-amber/10",
+    push_pull_legs:  "bg-onair-red/10",
+    upper_lower:     "bg-onair-cyan/10",
+    full_body:       "bg-onair-green/10",
+    bro_split:       "bg-onair-purple/10",
+    custom:          "bg-onair-amber/10",
+    street_workout:  "bg-orange-400/10",
   };
+
+  const difficultyColors: Record<string, string> = {
+    beginner: "bg-green-500/10 text-green-400",
+    medium:   "bg-yellow-500/10 text-yellow-400",
+    hard:     "bg-red-500/10 text-red-400",
+  };
+
+  const [templateFilter, setTemplateFilter] = useState<string>("all");
 
   const toggleFavorite = async (e: React.MouseEvent, programId: string) => {
     e.stopPropagation();
@@ -154,21 +167,24 @@ export default function Workouts() {
         </button>
       </div>
 
-      <div className="flex gap-2 border-b border-onair-border pb-1">
-        {(["programs", "history", "records"] as const).map((key) => (
+      <div className="flex gap-2 border-b border-onair-border pb-1 overflow-x-auto">
+        {(["programs", "favorites", "history", "records"] as const).map((key) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
               tab === key
                 ? "text-onair-cyan border-b-2 border-onair-cyan"
                 : "text-onair-muted hover:text-onair-text"
             }`}
           >
-            {key === "programs" && <Dumbbell className="w-4 h-4 inline mr-2" />}
-            {key === "history"  && <Calendar className="w-4 h-4 inline mr-2" />}
-            {key === "records"  && <Trophy className="w-4 h-4 inline mr-2" />}
-            {t(`workouts.${key === "programs" ? "myPrograms" : key}`)}
+            {key === "programs"  && <Dumbbell className="w-4 h-4 inline mr-2" />}
+            {key === "favorites" && <Star className="w-4 h-4 inline mr-2" />}
+            {key === "history"   && <Calendar className="w-4 h-4 inline mr-2" />}
+            {key === "records"   && <Trophy className="w-4 h-4 inline mr-2" />}
+            {key === "favorites"
+              ? (lang === "fr" ? "Favoris" : "Favorites")
+              : t(`workouts.${key === "programs" ? "myPrograms" : key}`)}
           </button>
         ))}
       </div>
@@ -179,33 +195,100 @@ export default function Workouts() {
           {/* Programmes recommandés */}
           {templates.length > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-onair-amber" />
-                <h2 className="text-sm font-semibold text-onair-muted uppercase tracking-wider">
-                  {t("workouts.templates.title")}
-                </h2>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-onair-amber" />
+                  <h2 className="text-sm font-semibold text-onair-muted uppercase tracking-wider">
+                    {t("workouts.templates.title")}
+                  </h2>
+                </div>
               </div>
+
+              {/* Filtres par catégorie */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: "all", label: lang === "fr" ? "Tous" : "All" },
+                  { key: "street_workout", label: "Street Workout" },
+                  { key: "classic", label: lang === "fr" ? "Classiques" : "Classic" },
+                ].map((f) => (
+                  <button
+                    key={f.key}
+                    onClick={() => setTemplateFilter(f.key)}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${
+                      templateFilter === f.key
+                        ? "bg-onair-cyan text-white"
+                        : "bg-onair-surface text-onair-muted hover:text-onair-text"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {templates.map((tpl, i) => (
+                {templates
+                  .filter((tpl) => {
+                    if (templateFilter === "street_workout") return tpl.program_type === "street_workout";
+                    if (templateFilter === "classic") return tpl.program_type !== "street_workout";
+                    return true;
+                  })
+                  .map((tpl, i) => (
                   <motion.div
                     key={tpl.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="card flex flex-col gap-3"
+                    transition={{ delay: Math.min(i * 0.03, 0.5) }}
+                    className="card flex flex-col gap-3 overflow-hidden"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${typeBg[tpl.program_type] || "bg-onair-surface"} ${typeColors[tpl.program_type] || "text-onair-muted"}`}>
+                    {tpl.image_url && (
+                      <div className="relative -mx-4 -mt-4 mb-1">
+                        <img
+                          src={tpl.image_url}
+                          alt={tpl.name}
+                          className="w-full h-40 object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-onair-bg/80 to-transparent" />
+                        <div className="absolute bottom-2 left-3 right-3 flex items-center gap-2 flex-wrap">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${typeBg[tpl.program_type] || "bg-onair-surface"} ${typeColors[tpl.program_type] || "text-onair-muted"} backdrop-blur-sm`}>
                             {t(`workouts.types.${tpl.program_type}` as any)}
                           </span>
+                          {tpl.difficulty && (
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full backdrop-blur-sm ${difficultyColors[tpl.difficulty] || ""}`}>
+                              {tpl.difficulty === "beginner" ? (lang === "fr" ? "Débutant" : "Beginner") :
+                               tpl.difficulty === "medium" ? (lang === "fr" ? "Moyen" : "Medium") :
+                               tpl.difficulty === "hard" ? (lang === "fr" ? "Difficile" : "Hard") : tpl.difficulty}
+                            </span>
+                          )}
                           {tpl.genders.includes("female") && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400 backdrop-blur-sm">
                               {t("workouts.templates.female")}
                             </span>
                           )}
                         </div>
+                      </div>
+                    )}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        {!tpl.image_url && (
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${typeBg[tpl.program_type] || "bg-onair-surface"} ${typeColors[tpl.program_type] || "text-onair-muted"}`}>
+                              {t(`workouts.types.${tpl.program_type}` as any)}
+                            </span>
+                            {tpl.difficulty && (
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${difficultyColors[tpl.difficulty] || ""}`}>
+                                {tpl.difficulty === "beginner" ? (lang === "fr" ? "Débutant" : "Beginner") :
+                                 tpl.difficulty === "medium" ? (lang === "fr" ? "Moyen" : "Medium") :
+                                 tpl.difficulty === "hard" ? (lang === "fr" ? "Difficile" : "Hard") : tpl.difficulty}
+                              </span>
+                            )}
+                            {tpl.genders.includes("female") && (
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400">
+                                {t("workouts.templates.female")}
+                              </span>
+                            )}
+                          </div>
+                        )}
                         <h3 className="font-semibold text-sm leading-tight">{tpl.name}</h3>
                         <p className="text-xs text-onair-muted mt-1 line-clamp-2">{tpl.description}</p>
                       </div>
@@ -213,27 +296,72 @@ export default function Workouts() {
 
                     <div className="flex items-center gap-3 text-xs text-onair-muted">
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        {tpl.days_per_week}j/sem
-                      </span>
-                      <span className="flex items-center gap-1">
                         <Dumbbell className="w-3.5 h-3.5" />
                         {tpl.exercises_count} {t("workouts.exercises")}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Target className="w-3.5 h-3.5" />
-                        {tpl.days_count} {t("workouts.days")}
-                      </span>
+                      {tpl.program_type !== "street_workout" && (
+                        <>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            {tpl.days_per_week}j/sem
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Target className="w-3.5 h-3.5" />
+                            {tpl.days_count} {t("workouts.days")}
+                          </span>
+                        </>
+                      )}
                     </div>
 
-                    <button
-                      onClick={() => handleImport(tpl.id)}
-                      disabled={importing === tpl.id}
-                      className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-semibold bg-onair-cyan/10 text-onair-cyan hover:bg-onair-cyan/20 transition-colors disabled:opacity-50"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      {importing === tpl.id ? t("common.loading") : t("workouts.templates.import")}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleImport(tpl.id)}
+                        disabled={importing === tpl.id}
+                        className="flex items-center justify-center gap-2 flex-1 py-2 rounded-xl text-xs font-semibold bg-onair-cyan/10 text-onair-cyan hover:bg-onair-cyan/20 transition-colors disabled:opacity-50"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        {importing === tpl.id ? t("common.loading") : t("workouts.templates.import")}
+                      </button>
+                      {(() => {
+                        const imported = programs.find((p) => p.name === tpl.name);
+                        const isFav = imported?.is_favorite ?? false;
+                        return (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (imported) {
+                                // Already imported — toggle favorite
+                                try {
+                                  const { data } = await api.patch(`/workouts/programs/${imported.id}/favorite`);
+                                  setPrograms((prev) =>
+                                    prev.map((p) => (p.id === imported.id ? { ...p, is_favorite: data.is_favorite } : p))
+                                  );
+                                } catch { toast.error(t("common.error")); }
+                              } else {
+                                // Import + set favorite
+                                setImporting(tpl.id);
+                                try {
+                                  const { data } = await api.post(`/workouts/templates/${tpl.id}/import`);
+                                  await api.patch(`/workouts/programs/${data.id}/favorite`);
+                                  setPrograms((prev) => [{ ...data, is_favorite: true }, ...prev]);
+                                  toast.success(lang === "fr" ? "Ajouté aux favoris !" : "Added to favorites!");
+                                } catch { toast.error(t("common.error")); }
+                                finally { setImporting(null); }
+                              }
+                            }}
+                            disabled={importing === tpl.id}
+                            className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 ${
+                              isFav
+                                ? "bg-onair-amber/20 text-onair-amber"
+                                : "bg-onair-surface text-onair-muted hover:text-onair-amber hover:bg-onair-amber/10"
+                            }`}
+                            title={lang === "fr" ? "Favori" : "Favorite"}
+                          >
+                            <Star className={`w-3.5 h-3.5 ${isFav ? "fill-current" : ""}`} />
+                          </button>
+                        );
+                      })()}
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -266,6 +394,9 @@ export default function Workouts() {
                   onClick={() => navigate(`/workouts/program/${program.id}`)}
                 >
                   <div className="flex items-center justify-between">
+                    {program.image_url && (
+                      <img src={program.image_url} alt="" className="w-16 h-16 rounded-lg object-cover mr-3 flex-shrink-0" />
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-semibold text-lg">{program.name}</h3>
@@ -310,6 +441,74 @@ export default function Workouts() {
               ))
             )}
           </div>
+        </div>
+      )}
+
+      {tab === "favorites" && (
+        <div className="space-y-3">
+          {sortedPrograms.filter((p) => p.is_favorite).length === 0 ? (
+            <div className="card text-center py-12">
+              <Star className="w-12 h-12 mx-auto text-onair-muted/30 mb-4" />
+              <p className="text-onair-muted">
+                {lang === "fr" ? "Aucun programme en favori" : "No favorite programs"}
+              </p>
+              <p className="text-xs text-onair-muted/60 mt-2">
+                {lang === "fr"
+                  ? "Clique sur l'étoile d'un programme pour l'ajouter ici"
+                  : "Click the star on a program to add it here"}
+              </p>
+            </div>
+          ) : (
+            sortedPrograms.filter((p) => p.is_favorite).map((program, i) => (
+              <motion.div
+                key={program.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="card-hover cursor-pointer"
+                onClick={() => navigate(`/workouts/program/${program.id}`)}
+              >
+                <div className="flex items-center justify-between">
+                  {program.image_url && (
+                    <img src={program.image_url} alt="" className="w-16 h-16 rounded-lg object-cover mr-3 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-lg">{program.name}</h3>
+                      {program.is_active && (
+                        <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider bg-onair-green/10 text-onair-green rounded-full font-bold">
+                          Actif
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-onair-muted">
+                      <span className={typeColors[program.program_type] || "text-onair-muted"}>
+                        {t(`workouts.types.${program.program_type}` as any)}
+                      </span>
+                      <span>{program.days.length} {t("workouts.days")}</span>
+                      <span>
+                        {program.days.reduce((acc, d) => acc + d.exercises.length, 0)} {t("workouts.exercises")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => toggleFavorite(e, program.id)}
+                      className="p-2 rounded-lg bg-onair-amber/20 text-onair-amber"
+                    >
+                      <Star className="w-4 h-4 fill-current" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDayPickerProgram(program); }}
+                      className="p-2 rounded-lg bg-onair-red/10 text-onair-red hover:bg-onair-red/20 transition-colors"
+                    >
+                      <Play className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          )}
         </div>
       )}
 

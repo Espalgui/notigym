@@ -75,6 +75,8 @@ export default function SessionLogger() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
+  const [programImageUrl, setProgramImageUrl] = useState<string | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -118,7 +120,11 @@ export default function SessionLogger() {
           let day: ProgramDay | null = null;
           for (const p of programs) {
             const found = p.days.find((d: ProgramDay) => d.id === dayId);
-            if (found) { day = found; break; }
+            if (found) {
+              day = found;
+              if (p.image_url) setProgramImageUrl(p.image_url);
+              break;
+            }
           }
           if (day && day.exercises.length > 0) {
             const prefillSets: SetEntry[] = [];
@@ -336,6 +342,20 @@ export default function SessionLogger() {
             {t("workouts.session.prefilled")}
           </span>
         </div>
+      )}
+
+      {/* Program routine image */}
+      {programImageUrl && (
+        <button
+          onClick={() => setShowImageModal(true)}
+          className="w-full rounded-2xl overflow-hidden border border-onair-border/30 hover:border-onair-cyan/50 transition-colors"
+        >
+          <img
+            src={programImageUrl}
+            alt="Routine"
+            className="w-full h-44 object-cover"
+          />
+        </button>
       )}
 
       {/* Exercise list grouped */}
@@ -765,6 +785,35 @@ export default function SessionLogger() {
                 </button>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen image modal */}
+      <AnimatePresence>
+        {showImageModal && programImageUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+            onClick={() => setShowImageModal(false)}
+          >
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <motion.img
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              src={programImageUrl}
+              alt="Routine"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
           </motion.div>
         )}
       </AnimatePresence>

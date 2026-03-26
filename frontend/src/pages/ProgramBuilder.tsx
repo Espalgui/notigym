@@ -253,7 +253,7 @@ export default function ProgramBuilder() {
               {t("workouts.programType")}
             </label>
             <select value={programType} onChange={(e) => setProgramType(e.target.value)} className="w-full">
-              {["push_pull_legs", "upper_lower", "full_body", "bro_split", "custom"].map((type) => (
+              {["push_pull_legs", "upper_lower", "full_body", "bro_split", "street_workout", "custom"].map((type) => (
                 <option key={type} value={type}>{t(`workouts.types.${type}` as any)}</option>
               ))}
             </select>

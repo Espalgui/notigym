@@ -42,7 +42,7 @@ const navSections = [
     label: "nav.sectionSport",
     items: [
       { to: "/workouts", icon: Dumbbell, key: "nav.workouts", accent: null },
-      { to: "/tabata", icon: Timer, key: "nav.tabata", accent: "amber" },
+      { to: "/timers", icon: Timer, key: "nav.timers", accent: "amber" },
       { to: "/activity", icon: Footprints, key: "nav.activity", accent: null },
     ],
   },

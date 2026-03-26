@@ -57,3 +57,4 @@ class User(Base):
     custom_exercises = relationship("Exercise", back_populates="creator", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     daily_activities = relationship("DailyActivity", back_populates="user", cascade="all, delete-orphan")
+    timer_presets = relationship("TimerPreset", back_populates="user", cascade="all, delete-orphan")

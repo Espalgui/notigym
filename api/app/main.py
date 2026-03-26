@@ -9,7 +9,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import Base, engine
 from app.limiter import limiter
-from app.routers import activity, admin, auth, body, community, exercises, notifications, nutrition, stats, twofa, users, workouts
+from app.routers import activity, admin, auth, body, community, exercises, notifications, nutrition, stats, timers, twofa, users, workouts
 from app.seed import seed_exercises
 
 
@@ -60,6 +60,7 @@ app.include_router(community.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(activity.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
+app.include_router(timers.router, prefix="/api")
 app.include_router(twofa.router, prefix="/api")
 
 try:

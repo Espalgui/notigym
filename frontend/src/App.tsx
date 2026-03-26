@@ -17,7 +17,7 @@ import Community from "@/pages/Community";
 import Activity from "@/pages/Activity";
 import Statistics from "@/pages/Statistics";
 import Profile from "@/pages/Profile";
-import TabataTimer from "@/pages/TabataTimer";
+import Timers from "@/pages/Timers";
 import NotificationsSettings from "@/pages/NotificationsSettings";
 import Admin from "@/pages/Admin";
 import VerifyEmail from "@/pages/VerifyEmail";
@@ -100,7 +100,8 @@ export default function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="workouts" element={<Workouts />} />
-          <Route path="tabata" element={<TabataTimer />} />
+          <Route path="timers" element={<Timers />} />
+          <Route path="tabata" element={<Navigate to="/timers" replace />} />
           <Route path="workouts/new" element={<ProgramBuilder />} />
           <Route path="workouts/program/:id" element={<ProgramBuilder />} />
           <Route path="workouts/session" element={<SessionLogger />} />

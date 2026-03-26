@@ -388,13 +388,12 @@ export default function SessionLogger() {
               </div>
               <div className="divide-y divide-onair-border/50">
                 {/* Column headers */}
-                <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem_2.5rem] gap-1.5 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
+                <div className="grid grid-cols-[2.5rem_1fr_1fr_1fr_2.5rem_2.5rem] gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
                   <span className="text-center">#</span>
                   <span className="text-center">{t("workouts.weight")}</span>
                   <span className="text-center">{t("workouts.reps")}</span>
                   <span className="text-center">Sec</span>
                   <span className="text-center">W</span>
-                  <span className="text-center"><CheckCircle2 className="w-3 h-3 mx-auto" /></span>
                   <span />
                 </div>
                 {group.entries.map(({ set: s, globalIdx }) => {
@@ -403,14 +402,45 @@ export default function SessionLogger() {
                   return (
                     <div
                       key={globalIdx}
-                      className={`grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem_2.5rem] gap-1.5 px-4 py-2.5 items-center transition-colors ${
+                      className={`grid grid-cols-[2.5rem_1fr_1fr_1fr_2.5rem_2.5rem] gap-2 px-4 py-2.5 items-center transition-colors ${
                         s.is_validated ? "bg-onair-green/10" : isValid ? "bg-onair-green/5" : ""
                       } ${s.is_warmup ? "border-l-2 border-onair-amber" : ""}`}
                     >
-                      <span className="text-xs text-onair-muted text-center font-mono">
-                        {s.is_warmup && <span className="text-onair-amber text-[8px] align-super">*</span>}
-                        {s.set_number}
-                      </span>
+                      {/* Set number — tap to validate with targets */}
+                      {hasTarget ? (
+                        <button
+                          onClick={() => {
+                            setSets((prev) => {
+                              const updated = [...prev];
+                              const entry = updated[globalIdx];
+                              if (entry.is_validated) {
+                                entry.reps = 0;
+                                entry.duration_seconds = 0;
+                                entry.is_validated = false;
+                              } else {
+                                if (entry.target_reps) entry.reps = entry.target_reps;
+                                if (entry.target_duration) entry.duration_seconds = entry.target_duration;
+                                entry.is_validated = true;
+                              }
+                              return updated;
+                            });
+                          }}
+                          className={`w-7 h-7 mx-auto flex items-center justify-center rounded-full text-xs font-mono transition-colors ${
+                            s.is_validated
+                              ? "bg-onair-green text-white"
+                              : "border border-onair-border text-onair-muted hover:border-onair-green hover:text-onair-green"
+                          }`}
+                          title={lang === "fr" ? "Valider avec la cible" : "Validate with target"}
+                        >
+                          {s.is_warmup && <span className="text-onair-amber text-[8px] absolute -top-0.5 -right-0.5">*</span>}
+                          {s.is_validated ? <CheckCircle2 className="w-3.5 h-3.5" /> : s.set_number}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-onair-muted text-center font-mono">
+                          {s.is_warmup && <span className="text-onair-amber text-[8px] align-super">*</span>}
+                          {s.set_number}
+                        </span>
+                      )}
                       <input
                         type="number"
                         value={s.weight_kg || ""}
@@ -457,36 +487,6 @@ export default function SessionLogger() {
                           {lang === "fr" ? "Série de chauffe" : "Warm-up set"}
                         </span>
                       </button>
-                      {hasTarget ? (
-                        <button
-                          onClick={() => {
-                            setSets((prev) => {
-                              const updated = [...prev];
-                              const entry = updated[globalIdx];
-                              if (entry.is_validated) {
-                                entry.reps = 0;
-                                entry.duration_seconds = 0;
-                                entry.is_validated = false;
-                              } else {
-                                if (entry.target_reps) entry.reps = entry.target_reps;
-                                if (entry.target_duration) entry.duration_seconds = entry.target_duration;
-                                entry.is_validated = true;
-                              }
-                              return updated;
-                            });
-                          }}
-                          className={`p-1.5 rounded-lg transition-colors ${
-                            s.is_validated
-                              ? "bg-onair-green/20 text-onair-green"
-                              : "text-onair-muted hover:text-onair-green hover:bg-onair-green/10"
-                          }`}
-                          title={lang === "fr" ? "Valider avec la cible" : "Validate with target"}
-                        >
-                          <CheckCircle2 className={`w-4 h-4 ${s.is_validated ? "fill-onair-green/30" : ""}`} />
-                        </button>
-                      ) : (
-                        <span />
-                      )}
                       <button
                         onClick={() => removeSet(globalIdx)}
                         className="p-1.5 rounded-lg text-onair-muted hover:text-onair-red hover:bg-onair-red/10 transition-colors"

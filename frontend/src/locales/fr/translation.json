@@ -16,7 +16,11 @@
     "settings": "Paramètres",
     "profile": "Profil",
     "logout": "Déconnexion",
-    "installApp": "Installer l'app"
+    "installApp": "Installer l'app",
+    "sectionSport": "Sport",
+    "sectionBody": "Forme physique",
+    "sectionNutrition": "Nutrition",
+    "sectionSocial": "Social"
   },
   "auth": {
     "login": "Connexion",

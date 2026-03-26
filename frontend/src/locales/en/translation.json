@@ -16,7 +16,11 @@
     "settings": "Settings",
     "profile": "Profile",
     "logout": "Logout",
-    "installApp": "Install app"
+    "installApp": "Install app",
+    "sectionSport": "Sport",
+    "sectionBody": "Body",
+    "sectionNutrition": "Nutrition",
+    "sectionSocial": "Social"
   },
   "auth": {
     "login": "Login",

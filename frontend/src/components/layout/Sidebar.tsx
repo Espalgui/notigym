@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Dumbbell,
@@ -18,6 +19,7 @@ import {
   Timer,
   Radio,
   Bell,
+  ChevronDown,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { ShieldCheck } from "lucide-react";
@@ -30,17 +32,39 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const navItems = [
-  { to: "/", icon: LayoutDashboard, key: "nav.dashboard", accent: null },
-  { to: "/workouts", icon: Dumbbell, key: "nav.workouts", accent: null },
-  { to: "/tabata", icon: Timer, key: "nav.tabata", accent: "amber" },
-  { to: "/activity", icon: Footprints, key: "nav.activity", accent: null },
-  { to: "/statistics", icon: BarChart3, key: "nav.statistics", accent: null },
-  { to: "/body", icon: Activity, key: "nav.body", accent: null },
-  { to: "/nutrition", icon: Apple, key: "nav.nutrition", accent: null },
-  { to: "/community", icon: Users, key: "nav.community", accent: null },
-  { to: "/notifications", icon: Bell, key: "nav.notifications", accent: null },
-  { to: "/profile", icon: User, key: "nav.profile", accent: null },
+const navSections = [
+  {
+    items: [
+      { to: "/", icon: LayoutDashboard, key: "nav.dashboard", accent: null },
+    ],
+  },
+  {
+    label: "nav.sectionSport",
+    items: [
+      { to: "/workouts", icon: Dumbbell, key: "nav.workouts", accent: null },
+      { to: "/tabata", icon: Timer, key: "nav.tabata", accent: "amber" },
+      { to: "/activity", icon: Footprints, key: "nav.activity", accent: null },
+    ],
+  },
+  {
+    label: "nav.sectionBody",
+    items: [
+      { to: "/body", icon: Activity, key: "nav.body", accent: null },
+      { to: "/statistics", icon: BarChart3, key: "nav.statistics", accent: null },
+    ],
+  },
+  {
+    label: "nav.sectionNutrition",
+    items: [
+      { to: "/nutrition", icon: Apple, key: "nav.nutrition", accent: null },
+    ],
+  },
+  {
+    label: "nav.sectionSocial",
+    items: [
+      { to: "/community", icon: Users, key: "nav.community", accent: null },
+    ],
+  },
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
@@ -50,6 +74,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const { theme, toggle } = useThemeStore();
   const { canInstall, install } = usePWAInstall();
   const navigate = useNavigate();
+
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggleSection = (label: string) =>
+    setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
 
   const handleLogout = () => {
     logout();
@@ -71,56 +99,91 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </div>
       </NavLink>
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, icon: Icon, key, accent }) => {
-          const ACTIVE_CLASSES = {
-            amber: "bg-amber-500/10 text-amber-400 shadow-sm",
-            default: "bg-onair-red/10 text-onair-red shadow-sm",
-          };
-          const ACTIVE_ICON_CLASSES = {
-            amber: "bg-amber-500/15",
-            default: "bg-onair-red/15",
-          };
-          const ACTIVE_DOT_CLASSES = {
-            amber: "bg-amber-400",
-            default: "bg-onair-red",
-          };
-          const activeClass = accent === "amber" ? ACTIVE_CLASSES.amber : ACTIVE_CLASSES.default;
-          const activeIconClass = accent === "amber" ? ACTIVE_ICON_CLASSES.amber : ACTIVE_ICON_CLASSES.default;
-          const activeDotClass = accent === "amber" ? ACTIVE_DOT_CLASSES.amber : ACTIVE_DOT_CLASSES.default;
-
+      <nav className="flex-1 px-3 py-4 space-y-3 overflow-y-auto">
+        {navSections.map((section, sIdx) => {
+          const isCollapsed = section.label ? collapsed[section.label] ?? false : false;
           return (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === "/"}
-              onClick={onClose}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group",
-                  isActive
-                    ? activeClass
-                    : "text-onair-muted hover:text-onair-text hover:bg-onair-surface"
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <div
-                    className={cn(
-                      "p-1.5 rounded-lg transition-colors",
-                      isActive ? activeIconClass : "group-hover:bg-onair-surface"
-                    )}
+          <div key={sIdx}>
+            {section.label && (
+              <button
+                onClick={() => toggleSection(section.label!)}
+                className="flex items-center justify-between w-full px-4 mb-1 group"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-onair-muted/50 group-hover:text-onair-muted transition-colors">
+                  {t(section.label)}
+                </p>
+                <ChevronDown className={cn(
+                  "w-3 h-3 text-onair-muted/40 group-hover:text-onair-muted transition-all",
+                  isCollapsed && "-rotate-90"
+                )} />
+              </button>
+            )}
+            <AnimatePresence initial={false}>
+              {!isCollapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+            <div className="space-y-0.5">
+              {section.items.map(({ to, icon: Icon, key, accent }) => {
+                const ACTIVE_CLASSES = {
+                  amber: "bg-amber-500/10 text-amber-400 shadow-sm",
+                  default: "bg-onair-red/10 text-onair-red shadow-sm",
+                };
+                const ACTIVE_ICON_CLASSES = {
+                  amber: "bg-amber-500/15",
+                  default: "bg-onair-red/15",
+                };
+                const ACTIVE_DOT_CLASSES = {
+                  amber: "bg-amber-400",
+                  default: "bg-onair-red",
+                };
+                const activeClass = accent === "amber" ? ACTIVE_CLASSES.amber : ACTIVE_CLASSES.default;
+                const activeIconClass = accent === "amber" ? ACTIVE_ICON_CLASSES.amber : ACTIVE_ICON_CLASSES.default;
+                const activeDotClass = accent === "amber" ? ACTIVE_DOT_CLASSES.amber : ACTIVE_DOT_CLASSES.default;
+
+                return (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={to === "/"}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group",
+                        isActive
+                          ? activeClass
+                          : "text-onair-muted hover:text-onair-text hover:bg-onair-surface"
+                      )
+                    }
                   >
-                    <Icon className="w-4.5 h-4.5" />
-                  </div>
-                  <span>{t(key)}</span>
-                  {isActive && (
-                    <div className={cn("ml-auto w-1.5 h-1.5 rounded-full", activeDotClass)} />
-                  )}
-                </>
+                    {({ isActive }) => (
+                      <>
+                        <div
+                          className={cn(
+                            "p-1.5 rounded-lg transition-colors",
+                            isActive ? activeIconClass : "group-hover:bg-onair-surface"
+                          )}
+                        >
+                          <Icon className="w-4.5 h-4.5" />
+                        </div>
+                        <span>{t(key)}</span>
+                        {isActive && (
+                          <div className={cn("ml-auto w-1.5 h-1.5 rounded-full", activeDotClass)} />
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </div>
+                </motion.div>
               )}
-            </NavLink>
+            </AnimatePresence>
+          </div>
           );
         })}
       </nav>

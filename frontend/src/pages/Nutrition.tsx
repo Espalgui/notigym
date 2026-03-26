@@ -31,6 +31,8 @@ interface WaterSummary {
 
 interface Recipe {
   id: string;
+  created_by?: string | null;
+  creator_name?: string | null;
   name_fr: string;
   name_en: string;
   meal_type: string;
@@ -40,7 +42,22 @@ interface Recipe {
   fat_g: number;
   description_fr: string;
   description_en: string;
-  goals: string[];
+  goals: string[] | string;
+  tags?: string[] | string;
+  prep_time_min?: number | null;
+  cook_time_min?: number | null;
+  servings?: number;
+  ingredients_fr?: string | null;
+  ingredients_en?: string | null;
+  steps_fr?: string | null;
+  steps_en?: string | null;
+  is_official?: boolean;
+}
+
+function parseJsonField(val: string | string[] | null | undefined): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try { return JSON.parse(val); } catch { return []; }
 }
 
 export default function Nutrition() {
@@ -49,9 +66,10 @@ export default function Nutrition() {
   const { user } = useAuthStore();
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState(today);
-  const [activeTab, setActiveTab] = useState<"journal" | "recipes">("journal");
+  const [activeTab] = useState<"journal">("journal");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [recipeFilter, setRecipeFilter] = useState<string>("");
+  const [recipeTagFilter, setRecipeTagFilter] = useState<string>("");
   const [summary, setSummary] = useState<NutritionSummary | null>(null);
   const [waterSummary, setWaterSummary] = useState<WaterSummary | null>(null);
   const [showAddEntry, setShowAddEntry] = useState(false);
@@ -66,6 +84,15 @@ export default function Nutrition() {
   const [searchingFood, setSearchingFood] = useState(false);
   const searchTimeout = useState<ReturnType<typeof setTimeout> | null>(null);
   const [per100, setPer100] = useState<{ calories: number; protein_g: number; carbs_g: number; fat_g: number } | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [showShareRecipe, setShowShareRecipe] = useState(false);
+  const [shareForm, setShareForm] = useState({
+    name_fr: "", name_en: "", description_fr: "", description_en: "",
+    meal_type: "lunch", calories: "", protein_g: "", carbs_g: "", fat_g: "",
+    prep_time_min: "", cook_time_min: "", servings: "1",
+    ingredients_fr: "", ingredients_en: "", steps_fr: "", steps_en: "",
+    tags: "",
+  });
   const [reminderMinutes, setReminderMinutes] = useState(
     () => parseInt(localStorage.getItem("hydration_reminder_interval") || "45", 10)
   );
@@ -82,7 +109,7 @@ export default function Nutrition() {
   useEffect(() => { fetchSummary(); fetchWater(); }, [date]);
 
   useEffect(() => {
-    api.get("/nutrition/recipes").then((r) => setRecipes(r.data)).catch(() => {});
+    api.get("/recipes").then((r) => setRecipes(r.data)).catch(() => {});
   }, []);
 
   const handleFoodSearch = (query: string) => {
@@ -151,10 +178,12 @@ export default function Nutrition() {
   };
 
   const userGoal = (user as any)?.goal || "";
-  const recommendedRecipes = recipes.filter((r) => userGoal && r.goals.includes(userGoal));
-  const filteredRecipes = recipeFilter
-    ? recipes.filter((r) => r.meal_type === recipeFilter)
-    : recipes;
+  const recommendedRecipes = recipes.filter((r) => userGoal && parseJsonField(r.goals).includes(userGoal));
+  const filteredRecipes = recipes.filter((r) => {
+    if (recipeFilter && r.meal_type !== recipeFilter) return false;
+    if (recipeTagFilter && !parseJsonField(r.tags).includes(recipeTagFilter)) return false;
+    return true;
+  });
 
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,23 +259,6 @@ export default function Nutrition() {
             <Plus className="w-4 h-4" /> <span>{t("nutrition.addEntry")}</span>
           </button>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-onair-surface rounded-xl w-fit">
-        {(["journal", "recipes"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === tab
-                ? "bg-onair-card text-onair-text shadow-sm"
-                : "text-onair-muted hover:text-onair-text"
-            }`}
-          >
-            {t(`nutrition.tabs.${tab}`)}
-          </button>
-        ))}
       </div>
 
       {activeTab === "journal" && (<>
@@ -414,9 +426,9 @@ export default function Nutrition() {
 
       </>)}
 
-      {activeTab === "recipes" && (
-        <div className="space-y-6">
-          {/* Recommended section */}
+      {false && (
+        <div className="space-y-6 hidden">
+          {/* Recipes moved to /recipes page */}
           {recommendedRecipes.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -448,47 +460,109 @@ export default function Nutrition() {
             </div>
           )}
 
-          {/* Filter by meal type */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <ChefHat className="w-5 h-5 text-onair-cyan" />
-            <h2 className="font-display font-semibold mr-2">{t("nutrition.recipes.title")}</h2>
-            {["", "breakfast", "lunch", "dinner", "snack"].map((f) => (
-              <button
-                key={f}
-                onClick={() => setRecipeFilter(f)}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                  recipeFilter === f
-                    ? "bg-onair-cyan text-white"
-                    : "bg-onair-surface text-onair-muted hover:text-onair-text"
-                }`}
-              >
-                {f ? t(`nutrition.mealTypes.${f}` as any) : t("common.all")}
-              </button>
-            ))}
+          {/* Filters */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <ChefHat className="w-5 h-5 text-onair-cyan" />
+              <h2 className="font-display font-semibold mr-2">{lang?.startsWith("fr") ? "Recettes" : "Recipes"}</h2>
+              {["", "breakfast", "lunch", "dinner", "snack"].map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setRecipeFilter(f)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    recipeFilter === f
+                      ? "bg-onair-cyan text-white"
+                      : "bg-onair-surface text-onair-muted hover:text-onair-text"
+                  }`}
+                >
+                  {f ? t(`nutrition.mealTypes.${f}` as any) : t("common.all")}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { key: "", label: lang?.startsWith("fr") ? "Tous" : "All" },
+                { key: "high-protein", label: "High Protein" },
+                { key: "keto", label: "Keto" },
+                { key: "low-carb", label: "Low Carb" },
+                { key: "high-carb", label: "High Carb" },
+                { key: "vegan", label: "Vegan" },
+                { key: "vegetarian", label: lang?.startsWith("fr") ? "Végé" : "Veggie" },
+                { key: "quick", label: lang?.startsWith("fr") ? "Rapide" : "Quick" },
+                { key: "meal-prep", label: "Meal Prep" },
+                { key: "budget", label: "Budget" },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setRecipeTagFilter(f.key)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
+                    recipeTagFilter === f.key
+                      ? "bg-onair-amber text-white"
+                      : "bg-onair-surface text-onair-muted hover:text-onair-text"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {filteredRecipes.map((r) => (
+            {filteredRecipes.map((r) => {
+              const rTags = parseJsonField(r.tags);
+              return (
               <div key={r.id} className="card p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-sm">{lang === "fr" ? r.name_fr : r.name_en}</h3>
+                  <h3 className="font-medium text-sm">{lang?.startsWith("fr") ? r.name_fr : r.name_en}</h3>
                   <span className="text-xs text-onair-muted px-2 py-0.5 bg-onair-surface rounded-full">
                     {t(`nutrition.mealTypes.${r.meal_type}` as any)}
                   </span>
                 </div>
-                <p className="text-xs text-onair-muted">{lang === "fr" ? r.description_fr : r.description_en}</p>
+                <p className="text-xs text-onair-muted line-clamp-2">{lang?.startsWith("fr") ? r.description_fr : r.description_en}</p>
+                {rTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {rTags.slice(0, 4).map((tag: string) => (
+                      <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-onair-surface text-onair-muted">{tag}</span>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-mono text-onair-amber">{r.calories} kcal</span>
                   <span className="text-xs text-onair-muted">
                     P: {r.protein_g}g / C: {r.carbs_g}g / F: {r.fat_g}g
                   </span>
                 </div>
-                <button onClick={() => handleAddRecipe(r)} className="btn-primary text-xs w-full py-1.5">
-                  <Plus className="w-3 h-3 inline mr-1" />{t("nutrition.recipes.addToLog")}
-                </button>
+                {(r.prep_time_min || r.cook_time_min) && (
+                  <div className="flex items-center gap-3 text-[10px] text-onair-muted">
+                    {r.prep_time_min && <span>Prep: {r.prep_time_min}min</span>}
+                    {r.cook_time_min && <span>Cook: {r.cook_time_min}min</span>}
+                    {r.servings && r.servings > 1 && <span>{r.servings} {lang?.startsWith("fr") ? "portions" : "servings"}</span>}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={() => setSelectedRecipe(r)} className="btn-secondary text-xs flex-1 py-1.5">
+                    {lang?.startsWith("fr") ? "Voir" : "View"}
+                  </button>
+                  <button onClick={() => handleAddRecipe(r)} className="btn-primary text-xs flex-1 py-1.5">
+                    <Plus className="w-3 h-3 inline mr-1" />{t("nutrition.recipes.addToLog")}
+                  </button>
+                </div>
+                {r.creator_name && (
+                  <p className="text-[10px] text-onair-muted/50 text-right">par {r.creator_name}</p>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
+
+          {/* Share recipe button */}
+          <button
+            onClick={() => setShowShareRecipe(true)}
+            className="btn-secondary w-full flex items-center justify-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            {lang?.startsWith("fr") ? "Partager une recette" : "Share a recipe"}
+          </button>
         </div>
       )}
 
@@ -585,6 +659,183 @@ export default function Nutrition() {
             <div className="flex gap-3 mt-5">
               <button type="button" onClick={() => setShowGoalForm(false)} className="btn-secondary flex-1">{t("common.cancel")}</button>
               <button type="submit" className="btn-primary flex-1"><span>{t("common.save")}</span></button>
+            </div>
+          </motion.form>
+        </div>
+      )}
+      {/* Recipe Detail Modal */}
+      {selectedRecipe && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedRecipe(null)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="card w-full max-w-lg max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h2 className="text-lg font-display font-bold">{lang?.startsWith("fr") ? selectedRecipe.name_fr : selectedRecipe.name_en}</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-onair-surface text-onair-muted">{t(`nutrition.mealTypes.${selectedRecipe.meal_type}` as any)}</span>
+                  {selectedRecipe.creator_name && <span className="text-xs text-onair-muted">par {selectedRecipe.creator_name}</span>}
+                </div>
+              </div>
+              <button onClick={() => setSelectedRecipe(null)} className="text-onair-muted hover:text-onair-text p-1">&times;</button>
+            </div>
+
+            <p className="text-sm text-onair-muted mb-4">{lang?.startsWith("fr") ? selectedRecipe.description_fr : selectedRecipe.description_en}</p>
+
+            {/* Macros */}
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              <div className="text-center p-2 rounded-lg bg-onair-amber/10">
+                <p className="text-lg font-bold text-onair-amber">{selectedRecipe.calories}</p>
+                <p className="text-[10px] text-onair-muted">kcal</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-onair-red/10">
+                <p className="text-lg font-bold text-onair-red">{selectedRecipe.protein_g}g</p>
+                <p className="text-[10px] text-onair-muted">{t("nutrition.protein")}</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-onair-cyan/10">
+                <p className="text-lg font-bold text-onair-cyan">{selectedRecipe.carbs_g}g</p>
+                <p className="text-[10px] text-onair-muted">{t("nutrition.carbs")}</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-purple-500/10">
+                <p className="text-lg font-bold text-purple-400">{selectedRecipe.fat_g}g</p>
+                <p className="text-[10px] text-onair-muted">{t("nutrition.fat")}</p>
+              </div>
+            </div>
+
+            {/* Time + servings */}
+            {(selectedRecipe.prep_time_min || selectedRecipe.cook_time_min) && (
+              <div className="flex items-center gap-4 text-xs text-onair-muted mb-4">
+                {selectedRecipe.prep_time_min && <span>Prep: {selectedRecipe.prep_time_min} min</span>}
+                {selectedRecipe.cook_time_min && <span>Cuisson: {selectedRecipe.cook_time_min} min</span>}
+                {selectedRecipe.servings && selectedRecipe.servings > 1 && <span>{selectedRecipe.servings} portions</span>}
+              </div>
+            )}
+
+            {/* Ingredients */}
+            {(() => {
+              const ingredients = parseJsonField(lang?.startsWith("fr") ? selectedRecipe.ingredients_fr : selectedRecipe.ingredients_en);
+              return ingredients.length > 0 ? (
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold mb-2">{lang?.startsWith("fr") ? "Ingrédients" : "Ingredients"}</h3>
+                  <ul className="space-y-1">
+                    {ingredients.map((ing: string, i: number) => (
+                      <li key={i} className="text-sm text-onair-muted flex items-start gap-2">
+                        <span className="text-onair-cyan mt-0.5">-</span>
+                        {ing}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null;
+            })()}
+
+            {/* Steps */}
+            {(() => {
+              const steps = parseJsonField(lang?.startsWith("fr") ? selectedRecipe.steps_fr : selectedRecipe.steps_en);
+              return steps.length > 0 ? (
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold mb-2">{lang?.startsWith("fr") ? "Préparation" : "Instructions"}</h3>
+                  <ol className="space-y-2">
+                    {steps.map((step: string, i: number) => (
+                      <li key={i} className="text-sm text-onair-muted flex items-start gap-3">
+                        <span className="w-5 h-5 rounded-full bg-onair-cyan/20 text-onair-cyan text-xs flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null;
+            })()}
+
+            {/* Tags */}
+            {parseJsonField(selectedRecipe.tags).length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-4">
+                {parseJsonField(selectedRecipe.tags).map((tag: string) => (
+                  <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-onair-surface text-onair-muted">{tag}</span>
+                ))}
+              </div>
+            )}
+
+            <button onClick={() => { handleAddRecipe(selectedRecipe); setSelectedRecipe(null); }} className="btn-primary w-full">
+              <Plus className="w-4 h-4 inline mr-1" />{t("nutrition.recipes.addToLog")}
+            </button>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Share Recipe Modal */}
+      {showShareRecipe && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.form
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const payload: any = {
+                  name_fr: shareForm.name_fr,
+                  name_en: shareForm.name_en || shareForm.name_fr,
+                  description_fr: shareForm.description_fr || null,
+                  description_en: shareForm.description_en || shareForm.description_fr || null,
+                  meal_type: shareForm.meal_type,
+                  calories: +shareForm.calories || 0,
+                  protein_g: +shareForm.protein_g || 0,
+                  carbs_g: +shareForm.carbs_g || 0,
+                  fat_g: +shareForm.fat_g || 0,
+                  prep_time_min: +shareForm.prep_time_min || null,
+                  cook_time_min: +shareForm.cook_time_min || null,
+                  servings: +shareForm.servings || 1,
+                };
+                if (shareForm.ingredients_fr.trim()) payload.ingredients_fr = JSON.stringify(shareForm.ingredients_fr.split("\n").filter(Boolean));
+                if (shareForm.ingredients_en.trim()) payload.ingredients_en = JSON.stringify(shareForm.ingredients_en.split("\n").filter(Boolean));
+                if (shareForm.steps_fr.trim()) payload.steps_fr = JSON.stringify(shareForm.steps_fr.split("\n").filter(Boolean));
+                if (shareForm.steps_en.trim()) payload.steps_en = JSON.stringify(shareForm.steps_en.split("\n").filter(Boolean));
+                if (shareForm.tags.trim()) payload.tags = JSON.stringify(shareForm.tags.split(",").map((s: string) => s.trim()).filter(Boolean));
+                await api.post("/recipes", payload);
+                toast.success(lang?.startsWith("fr") ? "Recette partagée !" : "Recipe shared!");
+                setShowShareRecipe(false);
+                api.get("/recipes").then((r) => setRecipes(r.data)).catch(() => {});
+              } catch { toast.error("Error"); }
+            }}
+            className="card w-full max-w-lg max-h-[85vh] overflow-y-auto"
+          >
+            <h2 className="text-lg font-display font-bold mb-4">{lang?.startsWith("fr") ? "Partager une recette" : "Share a recipe"}</h2>
+            <div className="space-y-3">
+              <input value={shareForm.name_fr} onChange={(e) => setShareForm({ ...shareForm, name_fr: e.target.value })} placeholder={lang?.startsWith("fr") ? "Nom (français) *" : "Name (French) *"} required className="w-full" />
+              <input value={shareForm.name_en} onChange={(e) => setShareForm({ ...shareForm, name_en: e.target.value })} placeholder={lang?.startsWith("fr") ? "Nom (anglais)" : "Name (English)"} className="w-full" />
+              <select value={shareForm.meal_type} onChange={(e) => setShareForm({ ...shareForm, meal_type: e.target.value })} className="w-full">
+                {["breakfast", "lunch", "dinner", "snack"].map((m) => (
+                  <option key={m} value={m}>{t(`nutrition.mealTypes.${m}` as any)}</option>
+                ))}
+              </select>
+              <textarea value={shareForm.description_fr} onChange={(e) => setShareForm({ ...shareForm, description_fr: e.target.value })} placeholder={lang?.startsWith("fr") ? "Description courte" : "Short description"} rows={2} className="w-full text-sm" />
+              <div className="grid grid-cols-2 gap-2">
+                <input type="number" value={shareForm.calories} onChange={(e) => setShareForm({ ...shareForm, calories: e.target.value })} placeholder="Calories" className="w-full" />
+                <input type="number" value={shareForm.protein_g} onChange={(e) => setShareForm({ ...shareForm, protein_g: e.target.value })} placeholder="Protéines (g)" className="w-full" />
+                <input type="number" value={shareForm.carbs_g} onChange={(e) => setShareForm({ ...shareForm, carbs_g: e.target.value })} placeholder="Glucides (g)" className="w-full" />
+                <input type="number" value={shareForm.fat_g} onChange={(e) => setShareForm({ ...shareForm, fat_g: e.target.value })} placeholder="Lipides (g)" className="w-full" />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <input type="number" value={shareForm.prep_time_min} onChange={(e) => setShareForm({ ...shareForm, prep_time_min: e.target.value })} placeholder="Prep (min)" className="w-full" />
+                <input type="number" value={shareForm.cook_time_min} onChange={(e) => setShareForm({ ...shareForm, cook_time_min: e.target.value })} placeholder="Cuisson (min)" className="w-full" />
+                <input type="number" value={shareForm.servings} onChange={(e) => setShareForm({ ...shareForm, servings: e.target.value })} placeholder="Portions" className="w-full" />
+              </div>
+              <div>
+                <label className="text-xs text-onair-muted mb-1 block">{lang?.startsWith("fr") ? "Ingrédients (un par ligne)" : "Ingredients (one per line)"}</label>
+                <textarea value={shareForm.ingredients_fr} onChange={(e) => setShareForm({ ...shareForm, ingredients_fr: e.target.value })} rows={4} className="w-full text-sm" placeholder={"200g de poulet\n1 avocat\n100g de riz"} />
+              </div>
+              <div>
+                <label className="text-xs text-onair-muted mb-1 block">{lang?.startsWith("fr") ? "Étapes (une par ligne)" : "Steps (one per line)"}</label>
+                <textarea value={shareForm.steps_fr} onChange={(e) => setShareForm({ ...shareForm, steps_fr: e.target.value })} rows={4} className="w-full text-sm" placeholder={"Couper le poulet en dés.\nFaire revenir à feu vif.\nServir avec le riz."} />
+              </div>
+              <input value={shareForm.tags} onChange={(e) => setShareForm({ ...shareForm, tags: e.target.value })} placeholder="Tags (séparés par virgule): high-protein, quick, vegan..." className="w-full text-sm" />
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button type="button" onClick={() => setShowShareRecipe(false)} className="btn-secondary flex-1">{t("common.cancel")}</button>
+              <button type="submit" className="btn-primary flex-1"><span>{lang?.startsWith("fr") ? "Partager" : "Share"}</span></button>
             </div>
           </motion.form>
         </div>

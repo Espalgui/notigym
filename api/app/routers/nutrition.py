@@ -81,18 +81,6 @@ async def search_food(
     return results[:15]
 
 
-# --- Recipes ---
-
-@router.get("/recipes")
-async def list_recipes(
-    meal_type: str | None = Query(None),
-    goal: str | None = Query(None),
-    current_user: User = Depends(get_current_active_user),
-):
-    from app.keto_recipes import get_recipes
-    return get_recipes(meal_type=meal_type, goal=goal)
-
-
 # --- Goals ---
 
 @router.post("/goals", response_model=NutritionGoalResponse, status_code=status.HTTP_201_CREATED)

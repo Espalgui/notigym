@@ -9,8 +9,9 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import Base, engine
 from app.limiter import limiter
-from app.routers import activity, admin, auth, body, community, exercises, notifications, nutrition, stats, timers, twofa, users, workouts
+from app.routers import activity, admin, auth, body, community, exercises, notifications, nutrition, recipes, stats, timers, twofa, users, workouts
 from app.seed import seed_exercises
+from app.seed_recipes import seed_recipes
 
 
 @asynccontextmanager
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI):
 
     async with async_session_factory() as session:
         await seed_exercises(session)
+        await seed_recipes(session)
 
     yield
 
@@ -56,6 +58,7 @@ app.include_router(body.router, prefix="/api")
 app.include_router(exercises.router, prefix="/api")
 app.include_router(workouts.router, prefix="/api")
 app.include_router(nutrition.router, prefix="/api")
+app.include_router(recipes.router, prefix="/api")
 app.include_router(community.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(activity.router, prefix="/api")

@@ -13,6 +13,7 @@ import ProgramBuilder from "@/pages/ProgramBuilder";
 import SessionLogger from "@/pages/SessionLogger";
 import BodyTracking from "@/pages/BodyTracking";
 import Nutrition from "@/pages/Nutrition";
+import RecipesPage from "@/pages/Recipes";
 import Community from "@/pages/Community";
 import Activity from "@/pages/Activity";
 import Statistics from "@/pages/Statistics";
@@ -110,6 +111,7 @@ export default function App() {
           <Route path="statistics" element={<Statistics />} />
           <Route path="body" element={<BodyTracking />} />
           <Route path="nutrition" element={<Nutrition />} />
+          <Route path="recipes" element={<RecipesPage />} />
           <Route path="community" element={<Community />} />
           <Route path="notifications" element={<NotificationsSettings />} />
           <Route path="profile" element={<Profile />} />

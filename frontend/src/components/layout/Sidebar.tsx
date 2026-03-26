@@ -20,6 +20,7 @@ import {
   Radio,
   Bell,
   ChevronDown,
+  ChefHat,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { ShieldCheck } from "lucide-react";
@@ -57,6 +58,7 @@ const navSections = [
     label: "nav.sectionNutrition",
     items: [
       { to: "/nutrition", icon: Apple, key: "nav.nutrition", accent: null },
+      { to: "/recipes", icon: ChefHat, key: "nav.recipes", accent: null },
     ],
   },
   {

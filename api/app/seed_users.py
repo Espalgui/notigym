@@ -29,9 +29,12 @@ async def _get_exercise(db: AsyncSession, name_en: str) -> Exercise | None:
     return result.scalar_one_or_none()
 
 
-async def _user_has_programs(db: AsyncSession, user_id: uuid.UUID) -> bool:
+async def _user_has_program_named(db: AsyncSession, user_id: uuid.UUID, name: str) -> bool:
     result = await db.execute(
-        select(WorkoutProgram.id).where(WorkoutProgram.user_id == user_id).limit(1)
+        select(WorkoutProgram.id).where(
+            WorkoutProgram.user_id == user_id,
+            WorkoutProgram.name == name,
+        ).limit(1)
     )
     return result.scalar_one_or_none() is not None
 
@@ -212,7 +215,7 @@ async def seed_user_data(db: AsyncSession) -> None:
 
     # ── Espalgui ──────────────────────────────────────────────
     espalgui = await _get_user(db, "Espalgui")
-    if espalgui and not await _user_has_programs(db, espalgui.id):
+    if espalgui and not await _user_has_program_named(db, espalgui.id, ESPALGUI_PROGRAM["name"]):
         print("[seed] Creating program for Espalgui...")
         await _create_program(db, espalgui.id, ESPALGUI_PROGRAM)
 
@@ -251,9 +254,9 @@ async def seed_user_data(db: AsyncSession) -> None:
         await db.commit()
         print("[seed] Espalgui: program + nutrition + body ✓")
 
-    # ── Eve ───────────────────────────────────────────────────
-    eve = await _get_user(db, "Eve")
-    if eve and not await _user_has_programs(db, eve.id):
+    # ── Eve (ivy) ────────────────────────────────────────────
+    eve = await _get_user(db, "ivy")
+    if eve and not await _user_has_program_named(db, eve.id, EVE_PROGRAM["name"]):
         print("[seed] Creating program for Eve...")
         await _create_program(db, eve.id, EVE_PROGRAM)
 

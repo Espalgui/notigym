@@ -4,11 +4,13 @@ import { motion } from "framer-motion";
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
 } from "recharts";
-import { Apple, Plus, Droplets, Target, ChefHat, Star, Search, Loader2 } from "lucide-react";
+import { Apple, Plus, Droplets, Target, ChefHat, Star, Search, Loader2, ScanLine } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { useThemeStore } from "@/stores/themeStore";
 import { useAuthStore } from "@/stores/authStore";
 import toast from "react-hot-toast";
+import BarcodeScanner from "@/components/nutrition/BarcodeScanner";
 import { useHydrationReminder } from "@/hooks/useHydrationReminder";
 
 interface NutritionSummary {
@@ -82,6 +84,7 @@ export default function Nutrition() {
   const [foodSearch, setFoodSearch] = useState("");
   const [foodResults, setFoodResults] = useState<{ name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; image_url?: string }[]>([]);
   const [searchingFood, setSearchingFood] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const searchTimeout = useState<ReturnType<typeof setTimeout> | null>(null);
   const [per100, setPer100] = useState<{ calories: number; protein_g: number; carbs_g: number; fat_g: number } | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -140,6 +143,17 @@ export default function Nutrition() {
     });
     setFoodSearch("");
     setFoodResults([]);
+  };
+
+  const handleBarcodeScan = async (barcode: string) => {
+    setShowScanner(false);
+    try {
+      const { data } = await api.get(`/nutrition/product/${barcode}`);
+      selectFood(data);
+      toast.success(lang?.startsWith("fr") ? "Produit trouvé !" : "Product found!");
+    } catch {
+      toast.error(lang?.startsWith("fr") ? "Produit non trouvé" : "Product not found");
+    }
   };
 
   const handleQuantityChange = (qty: string) => {
@@ -574,15 +588,25 @@ export default function Nutrition() {
             <div className="space-y-3">
               {/* OpenFoodFacts search */}
               <div className="relative">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-onair-muted" />
-                  <input
-                    value={foodSearch}
-                    onChange={(e) => handleFoodSearch(e.target.value)}
-                    placeholder={lang?.startsWith("fr") ? "Rechercher un aliment..." : "Search food..."}
-                    className="w-full pl-9 pr-8"
-                  />
-                  {searchingFood && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-onair-muted animate-spin" />}
+                <div className="relative flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-onair-muted" />
+                    <input
+                      value={foodSearch}
+                      onChange={(e) => handleFoodSearch(e.target.value)}
+                      placeholder={lang?.startsWith("fr") ? "Rechercher un aliment..." : "Search food..."}
+                      className="w-full pl-9 pr-8"
+                    />
+                    {searchingFood && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-onair-muted animate-spin" />}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowScanner(true)}
+                    className="px-3 rounded-xl bg-onair-cyan/10 text-onair-cyan hover:bg-onair-cyan/20 transition-colors flex items-center gap-1.5"
+                    title={lang?.startsWith("fr") ? "Scanner un code-barres" : "Scan barcode"}
+                  >
+                    <ScanLine className="w-4 h-4" />
+                  </button>
                 </div>
                 {foodResults.length > 0 && (
                   <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-onair-surface border border-onair-border rounded-xl shadow-xl max-h-48 overflow-y-auto">
@@ -840,6 +864,15 @@ export default function Nutrition() {
           </motion.form>
         </div>
       )}
+      {/* Barcode Scanner */}
+      <AnimatePresence>
+        {showScanner && (
+          <BarcodeScanner
+            onScan={handleBarcodeScan}
+            onClose={() => setShowScanner(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

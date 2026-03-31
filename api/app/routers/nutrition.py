@@ -81,6 +81,45 @@ async def search_food(
     return results[:15]
 
 
+@router.get("/product/{barcode}")
+async def get_product_by_barcode(
+    barcode: str,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Lookup a product by barcode via OpenFoodFacts."""
+    url = f"https://world.openfoodfacts.net/api/v2/product/{barcode}"
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(url, params={
+                "fields": "product_name,product_name_fr,brands,nutriments,image_front_small_url,quantity",
+            })
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    product = data.get("product")
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    name = product.get("product_name_fr") or product.get("product_name") or ""
+    if not name:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    brand = product.get("brands", "")
+    n = product.get("nutriments", {})
+
+    return {
+        "name": f"{name} ({brand})" if brand else name,
+        "calories": round(n.get("energy-kcal_100g", 0)),
+        "protein_g": round(n.get("proteins_100g", 0), 1),
+        "carbs_g": round(n.get("carbohydrates_100g", 0), 1),
+        "fat_g": round(n.get("fat_100g", 0), 1),
+        "quantity": product.get("quantity", ""),
+        "image_url": product.get("image_front_small_url", ""),
+    }
+
+
 # --- Goals ---
 
 @router.post("/goals", response_model=NutritionGoalResponse, status_code=status.HTTP_201_CREATED)

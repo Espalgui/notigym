@@ -112,11 +112,13 @@ export default function SessionLogger() {
       .catch(() => {});
   }, []);
 
-  // Disable pull-to-refresh while session is active
+  // Disable pull-to-refresh while session is active (html for Chrome, body for Safari)
   useEffect(() => {
     if (!sessionId) return;
+    document.documentElement.style.overscrollBehavior = "contain";
     document.body.style.overscrollBehavior = "contain";
     return () => {
+      document.documentElement.style.overscrollBehavior = "";
       document.body.style.overscrollBehavior = "";
     };
   }, [sessionId]);

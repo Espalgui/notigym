@@ -561,6 +561,7 @@
     "search": "Search...",
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode",
+    "autoMode": "Auto Mode",
     "all": "All"
   },
   "planning": {

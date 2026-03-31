@@ -75,8 +75,8 @@ function toLocalDateString(d: Date): string {
 
 export default function Activity() {
   const { t, i18n } = useTranslation();
-  const { theme } = useThemeStore();
-  const isDark = theme === "dark";
+  const { resolvedTheme } = useThemeStore();
+  const isDark = resolvedTheme === "dark";
   const lang = i18n.language?.startsWith("fr") ? "fr" : "en";
   const [searchParams, setSearchParams] = useSearchParams();
 

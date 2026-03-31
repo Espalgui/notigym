@@ -23,6 +23,7 @@ import {
   ChefHat,
   StickyNote,
   CalendarDays,
+  Monitor,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { ShieldCheck } from "lucide-react";
@@ -249,20 +250,25 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <div className="p-1.5 rounded-lg">
             {theme === "dark" ? (
               <Sun className="w-4.5 h-4.5" />
-            ) : (
+            ) : theme === "light" ? (
               <Moon className="w-4.5 h-4.5" />
+            ) : (
+              <Monitor className="w-4.5 h-4.5" />
             )}
           </div>
           <span>
-            {theme === "dark" ? t("common.lightMode") : t("common.darkMode")}
+            {theme === "dark"
+              ? t("common.lightMode")
+              : theme === "light"
+                ? t("common.darkMode")
+                : t("common.autoMode")}
           </span>
-          <div className="ml-auto relative w-10 h-5 rounded-full bg-onair-border transition-colors">
-            <motion.div
-              layout
-              className="absolute top-0.5 w-4 h-4 rounded-full bg-onair-text"
-              animate={{ left: theme === "dark" ? 2 : 22 }}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            />
+          <div className="ml-auto flex items-center gap-1 text-[10px] uppercase tracking-wider text-onair-muted/60">
+            {theme === "auto" ? "Auto" : theme === "dark" ? (
+              <Moon className="w-3 h-3" />
+            ) : (
+              <Sun className="w-3 h-3" />
+            )}
           </div>
         </button>
       </div>

@@ -85,7 +85,7 @@ function formatVolume(kg: number): string {
 
 export default function Statistics() {
   const { t } = useTranslation();
-  const { theme } = useThemeStore();
+  const { resolvedTheme: theme } = useThemeStore();
   const [period, setPeriod] = useState<Period>("month");
   const [data, setData] = useState<ProgressionData | null>(null);
   const [loading, setLoading] = useState(true);

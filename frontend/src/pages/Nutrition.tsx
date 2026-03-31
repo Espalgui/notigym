@@ -234,8 +234,8 @@ export default function Nutrition() {
     }
   };
 
-  const { theme } = useThemeStore();
-  const isDark = theme === "dark";
+  const { resolvedTheme } = useThemeStore();
+  const isDark = resolvedTheme === "dark";
 
   const macroData = summary ? [
     { name: t("nutrition.protein"), value: summary.total_protein_g, color: isDark ? "#00f0ff" : "#0a84ff" },

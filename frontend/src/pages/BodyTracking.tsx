@@ -175,8 +175,8 @@ function CompareSlider({
 export default function BodyTracking() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith("fr") ? "fr" : "en";
-  const { theme } = useThemeStore();
-  const isDark = theme === "dark";
+  const { resolvedTheme } = useThemeStore();
+  const isDark = resolvedTheme === "dark";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [measurements, setMeasurements] = useState<Measurement[]>([]);

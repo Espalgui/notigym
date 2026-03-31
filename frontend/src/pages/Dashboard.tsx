@@ -47,7 +47,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { theme } = useThemeStore();
+  const { resolvedTheme } = useThemeStore();
   const [stats, setStats] = useState<WorkoutStats | null>(null);
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -68,7 +68,7 @@ export default function Dashboard() {
       weight: m.weight_kg,
     }));
 
-  const isDark = theme === "dark";
+  const isDark = resolvedTheme === "dark";
   const chartColors = {
     grid: isDark ? "#2a2a3e" : "#e5e5ea",
     axis: isDark ? "#8e8e93" : "#86868b",

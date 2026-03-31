@@ -61,13 +61,13 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { fetchUser } = useAuthStore();
-  const { theme } = useThemeStore();
+  const { resolvedTheme } = useThemeStore();
 
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
 
-  const isDark = theme === "dark";
+  const isDark = resolvedTheme === "dark";
 
   return (
     <>

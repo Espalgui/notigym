@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.exercise import ExerciseResponse
 
@@ -105,7 +105,7 @@ class SessionSetCreate(BaseModel):
     reps: int | None = None
     weight_kg: float | None = None
     duration_seconds: int | None = None
-    rpe: float | None = None
+    rpe: float | None = Field(None, ge=0, le=10)
     is_warmup: bool = False
     notes: str | None = None
 
@@ -114,7 +114,7 @@ class SessionSetUpdate(BaseModel):
     reps: int | None = None
     weight_kg: float | None = None
     duration_seconds: int | None = None
-    rpe: float | None = None
+    rpe: float | None = Field(None, ge=0, le=10)
     is_warmup: bool | None = None
     is_pr: bool | None = None
     notes: str | None = None
@@ -189,3 +189,29 @@ class WorkoutStats(BaseModel):
     sessions_this_week: int = 0
     sessions_this_month: int = 0
     total_duration_this_week: float = 0.0
+
+
+# ── Planning / Schedule ──────────────────────────────────────
+
+class BulkScheduleCreate(BaseModel):
+    program_id: uuid.UUID
+    weekdays: list[int]  # 0=Mon..6=Sun
+
+
+class ScheduleSlotResponse(BaseModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    program_id: uuid.UUID
+    program_day_id: uuid.UUID | None = None
+    weekday: int | None = None
+    is_rest_day: bool
+    program_day_name: str | None = None
+    exercises_count: int = 0
+
+    model_config = {"from_attributes": True}
+
+
+class WeeklyPlanningResponse(BaseModel):
+    schedule: list[ScheduleSlotResponse]
+    sessions: list[WorkoutSessionResponse]
+    program_name: str | None = None

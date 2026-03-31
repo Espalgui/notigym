@@ -24,7 +24,8 @@
     "sectionNutrition": "Nutrition",
     "sectionSocial": "Social",
     "sectionPersonal": "Perso",
-    "notes": "Bloc-notes"
+    "notes": "Bloc-notes",
+    "planning": "Planning"
   },
   "auth": {
     "login": "Connexion",
@@ -561,5 +562,28 @@
     "lightMode": "Mode clair",
     "darkMode": "Mode sombre",
     "all": "Tous"
+  },
+  "planning": {
+    "title": "Planning",
+    "subtitle": "Votre semaine d'entraînement",
+    "weekOf": "Semaine du {{date}}",
+    "today": "Aujourd'hui",
+    "rest": "Repos",
+    "planned": "Planifié",
+    "completed": "Terminée",
+    "startSession": "Démarrer",
+    "noSchedule": "Aucun planning configuré",
+    "noScheduleHint": "Configurez votre planning pour voir vos séances de la semaine.",
+    "configure": "Configurer le planning",
+    "configureTitle": "Configurer votre planning",
+    "selectProgram": "Choisissez un programme",
+    "selectDays": "Choisissez vos jours d'entraînement",
+    "weekdays": ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
+    "weekdaysFull": ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"],
+    "exercises": "{{count}} exercice(s)",
+    "saved": "Planning enregistré !",
+    "cleared": "Planning supprimé",
+    "changeSchedule": "Modifier",
+    "clearSchedule": "Supprimer le planning"
   }
 }

@@ -388,11 +388,12 @@ export default function SessionLogger() {
               </div>
               <div className="divide-y divide-onair-border/50">
                 {/* Column headers */}
-                <div className="grid grid-cols-[2.5rem_1fr_1fr_1fr_2.5rem_2.5rem] gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
+                <div className="grid grid-cols-[2.5rem_1fr_1fr_1fr_3rem_2.5rem_2.5rem] gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
                   <span className="text-center">#</span>
                   <span className="text-center">{t("workouts.weight")}</span>
                   <span className="text-center">{t("workouts.reps")}</span>
                   <span className="text-center">Sec</span>
+                  <span className="text-center">RPE</span>
                   <span className="text-center">W</span>
                   <span />
                 </div>
@@ -402,7 +403,7 @@ export default function SessionLogger() {
                   return (
                     <div
                       key={globalIdx}
-                      className={`grid grid-cols-[2.5rem_1fr_1fr_1fr_2.5rem_2.5rem] gap-2 px-4 py-2.5 items-center transition-colors ${
+                      className={`grid grid-cols-[2.5rem_1fr_1fr_1fr_3rem_2.5rem_2.5rem] gap-2 px-4 py-2.5 items-center transition-colors ${
                         s.is_validated ? "bg-onair-green/10" : isValid ? "bg-onair-green/5" : ""
                       } ${s.is_warmup ? "border-l-2 border-onair-amber" : ""}`}
                     >
@@ -471,6 +472,24 @@ export default function SessionLogger() {
                         className="text-center text-sm p-1.5 rounded-lg"
                         placeholder={s.target_duration ? `${s.target_duration}` : "sec"}
                         min={0}
+                      />
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={s.rpe != null ? String(s.rpe).replace(".", ",") : ""}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(",", ".");
+                          if (raw === "") {
+                            updateSet(globalIdx, "rpe", null);
+                            return;
+                          }
+                          const val = parseFloat(raw);
+                          if (!isNaN(val)) {
+                            updateSet(globalIdx, "rpe", Math.min(10, Math.max(0, val)));
+                          }
+                        }}
+                        className="text-center text-sm p-1.5 rounded-lg"
+                        placeholder="RPE"
                       />
                       <button
                         onClick={() =>

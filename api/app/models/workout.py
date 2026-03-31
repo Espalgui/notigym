@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -128,3 +128,26 @@ class PersonalRecord(Base):
 
     user = relationship("User", back_populates="personal_records")
     exercise = relationship("Exercise", back_populates="personal_records")
+
+
+class ScheduledWorkout(Base):
+    __tablename__ = "scheduled_workouts"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    program_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("workout_programs.id", ondelete="CASCADE"), index=True, nullable=False)
+    program_day_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("program_days.id", ondelete="CASCADE"), nullable=True)
+    weekday: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)  # 0=Mon..6=Sun
+    is_rest_day: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    user = relationship("User")
+    program = relationship("WorkoutProgram")
+    program_day = relationship("ProgramDay")

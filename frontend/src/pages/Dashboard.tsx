@@ -124,6 +124,7 @@ export default function Dashboard() {
       value: stats?.sessions_this_week ?? 0,
       color: "text-onair-amber",
       gradient: "from-onair-amber/15 to-transparent",
+      to: "/workouts?tab=history",
     },
     {
       icon: Clock,
@@ -131,6 +132,7 @@ export default function Dashboard() {
       value: stats ? `${Math.round(stats.total_duration_this_week)}min` : "0min",
       color: "text-onair-red",
       gradient: "from-onair-red/15 to-transparent",
+      to: "/workouts?tab=history",
     },
     {
       icon: Target,
@@ -138,6 +140,7 @@ export default function Dashboard() {
       value: stats?.sessions_this_month ?? 0,
       color: "text-onair-purple",
       gradient: "from-onair-purple/15 to-transparent",
+      to: "/workouts?tab=history",
     },
     {
       icon: Zap,
@@ -145,6 +148,7 @@ export default function Dashboard() {
       value: stats ? formatVolume(stats.total_volume_kg) : "0kg",
       color: "text-onair-cyan",
       gradient: "from-onair-cyan/15 to-transparent",
+      to: "/workouts?tab=history",
     },
     {
       icon: TrendingUp,
@@ -154,6 +158,7 @@ export default function Dashboard() {
         : "—",
       color: "text-onair-green",
       gradient: "from-onair-green/15 to-transparent",
+      to: "/body",
     },
   ];
 
@@ -195,7 +200,11 @@ export default function Dashboard() {
       <motion.div {...fadeInUp} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {statCards.map((card) => (
-            <div key={card.label} className="card relative overflow-hidden">
+            <div
+              key={card.label}
+              onClick={() => navigate(card.to)}
+              className="card relative overflow-hidden cursor-pointer hover:scale-[1.03] active:scale-[0.98] transition-transform duration-200"
+            >
               <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} pointer-events-none`} />
               <div className="relative">
                 <div className="flex items-center gap-2 mb-3">

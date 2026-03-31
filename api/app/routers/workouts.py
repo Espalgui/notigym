@@ -615,9 +615,7 @@ async def import_template(
         image_url=template.get("image_url"),
     )
     db.add(program)
-    await db.flush()
-
-    # Crée les jours et exercices
+    await db.flush()    # Crée les jours et exercices
     for day_order, day_data in enumerate(template["days"]):
         day_name = day_data[f"name_{lang}"] if f"name_{lang}" in day_data else day_data["name_fr"]
         day = ProgramDay(

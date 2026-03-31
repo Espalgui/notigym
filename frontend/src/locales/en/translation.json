@@ -24,7 +24,8 @@
     "sectionNutrition": "Nutrition",
     "sectionSocial": "Social",
     "sectionPersonal": "Personal",
-    "notes": "Notes"
+    "notes": "Notes",
+    "planning": "Planning"
   },
   "auth": {
     "login": "Login",
@@ -561,5 +562,28 @@
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode",
     "all": "All"
+  },
+  "planning": {
+    "title": "Planning",
+    "subtitle": "Your training week",
+    "weekOf": "Week of {{date}}",
+    "today": "Today",
+    "rest": "Rest",
+    "planned": "Planned",
+    "completed": "Completed",
+    "startSession": "Start",
+    "noSchedule": "No schedule configured",
+    "noScheduleHint": "Set up your schedule to see your weekly workouts.",
+    "configure": "Set up schedule",
+    "configureTitle": "Set up your schedule",
+    "selectProgram": "Choose a program",
+    "selectDays": "Choose your training days",
+    "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "weekdaysFull": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    "exercises": "{{count}} exercise(s)",
+    "saved": "Schedule saved!",
+    "cleared": "Schedule cleared",
+    "changeSchedule": "Edit",
+    "clearSchedule": "Clear schedule"
   }
 }

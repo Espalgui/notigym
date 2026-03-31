@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Dumbbell, Calendar, Trophy, ChevronRight, Play, Sparkles, Download, Clock, Target, ChevronDown, Flame, Star, X } from "lucide-react";
@@ -71,7 +71,13 @@ export default function Workouts() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [importing, setImporting] = useState<string | null>(null);
-  const [tab, setTab] = useState<"programs" | "favorites" | "history" | "records">("programs");
+  const [searchParams] = useSearchParams();
+  const initialTab = (["programs", "favorites", "history", "records"] as const).includes(
+    searchParams.get("tab") as any
+  )
+    ? (searchParams.get("tab") as "programs" | "favorites" | "history" | "records")
+    : "programs";
+  const [tab, setTab] = useState<"programs" | "favorites" | "history" | "records">(initialTab);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [exerciseMap, setExerciseMap] = useState<Record<string, ExerciseRef>>({});
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
@@ -606,19 +612,21 @@ export default function Workouts() {
                                 </span>
                               </div>
                               <div className="px-4">
-                                <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem] gap-2 py-1.5 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
+                                <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem] gap-2 py-1.5 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
                                   <span className="text-center">#</span>
                                   <span className="text-center">{t("workouts.weight")}</span>
                                   <span className="text-center">{t("workouts.reps")}</span>
                                   <span className="text-center">Sec</span>
+                                  <span className="text-center">RPE</span>
                                   <span />
                                 </div>
                                 {group.sets.map((s) => (
-                                  <div key={s.id} className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem] gap-2 py-1.5 text-sm">
+                                  <div key={s.id} className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem] gap-2 py-1.5 text-sm">
                                     <span className="text-center text-onair-muted font-mono text-xs">{s.set_number}</span>
                                     <span className="text-center font-medium">{s.weight_kg != null ? `${s.weight_kg} kg` : "–"}</span>
                                     <span className="text-center">{s.reps ?? "–"}</span>
                                     <span className="text-center">{s.duration_seconds ? `${s.duration_seconds}s` : "–"}</span>
+                                    <span className="text-center text-xs">{s.rpe != null ? String(s.rpe).replace(".", ",") : "–"}</span>
                                     <span className="text-center">
                                       {s.is_warmup && <span className="text-[10px] text-onair-amber">W</span>}
                                       {s.is_pr && <span className="text-[10px] text-onair-red font-bold">PR</span>}

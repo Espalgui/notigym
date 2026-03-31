@@ -17,6 +17,7 @@ import RecipesPage from "@/pages/Recipes";
 import Notes from "@/pages/Notes";
 import Community from "@/pages/Community";
 import Activity from "@/pages/Activity";
+import Planning from "@/pages/Planning";
 import Statistics from "@/pages/Statistics";
 import Profile from "@/pages/Profile";
 import Timers from "@/pages/Timers";
@@ -108,6 +109,7 @@ export default function App() {
           <Route path="workouts/program/:id" element={<ProgramBuilder />} />
           <Route path="workouts/session" element={<SessionLogger />} />
           <Route path="workouts/session/:id" element={<SessionLogger />} />
+          <Route path="planning" element={<Planning />} />
           <Route path="activity" element={<Activity />} />
           <Route path="statistics" element={<Statistics />} />
           <Route path="body" element={<BodyTracking />} />

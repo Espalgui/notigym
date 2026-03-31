@@ -11,6 +11,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.exercise import Exercise
 from app.notifications import create_notification
+from app.services.pr_detection import check_and_record_pr
 from app.workout_templates import get_templates_for_user
 from app.models.workout import (
     PersonalRecord,
@@ -422,6 +423,13 @@ async def add_set(
     s = SessionSet(session_id=session_id, **data.model_dump())
     db.add(s)
     await db.flush()
+
+    # PR detection
+    is_new_pr = await check_and_record_pr(
+        db, current_user.id, data.exercise_id,
+        data.weight_kg, data.reps, s.id, data.is_warmup,
+    )
+    await db.flush()
     await db.refresh(s)
     return s
 
@@ -655,3 +663,89 @@ async def import_template(
         .options(selectinload(WorkoutProgram.days).selectinload(ProgramDay.exercises).selectinload(ProgramExercise.exercise))
     )
     return result.scalar_one()
+
+
+# --- PR Wall ---
+
+@router.get("/records/wall")
+async def get_pr_wall(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get all PRs grouped by exercise for the PR wall."""
+    from sqlalchemy import desc
+
+    subq = (
+        select(
+            PersonalRecord.exercise_id,
+            func.max(PersonalRecord.estimated_1rm).label("best_1rm"),
+            func.max(PersonalRecord.weight_kg).label("best_weight"),
+            func.max(PersonalRecord.reps).label("best_reps"),
+            func.max(PersonalRecord.achieved_at).label("last_pr_date"),
+            func.count(PersonalRecord.id).label("pr_count"),
+        )
+        .where(PersonalRecord.user_id == current_user.id)
+        .group_by(PersonalRecord.exercise_id)
+    ).subquery()
+
+    result = await db.execute(
+        select(
+            Exercise.id,
+            Exercise.name_fr,
+            Exercise.name_en,
+            Exercise.muscle_group,
+            Exercise.image_url,
+            subq.c.best_1rm,
+            subq.c.best_weight,
+            subq.c.best_reps,
+            subq.c.last_pr_date,
+            subq.c.pr_count,
+        )
+        .join(subq, Exercise.id == subq.c.exercise_id)
+        .order_by(desc(subq.c.last_pr_date))
+    )
+
+    rows = result.all()
+    return [
+        {
+            "exercise_id": str(r.id),
+            "name_fr": r.name_fr,
+            "name_en": r.name_en,
+            "muscle_group": r.muscle_group,
+            "image_url": r.image_url,
+            "best_1rm": r.best_1rm,
+            "best_weight": r.best_weight,
+            "best_reps": r.best_reps,
+            "last_pr_date": r.last_pr_date.isoformat() if r.last_pr_date else None,
+            "pr_count": r.pr_count,
+        }
+        for r in rows
+    ]
+
+
+@router.get("/records/exercise/{exercise_id}/history")
+async def get_pr_history(
+    exercise_id: uuid_mod.UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get 1RM progression over time for a specific exercise."""
+    result = await db.execute(
+        select(PersonalRecord)
+        .where(
+            PersonalRecord.user_id == current_user.id,
+            PersonalRecord.exercise_id == exercise_id,
+            PersonalRecord.record_type == "1rm",
+        )
+        .order_by(PersonalRecord.achieved_at)
+    )
+    prs = result.scalars().all()
+    return [
+        {
+            "date": pr.achieved_at.isoformat(),
+            "weight_kg": pr.weight_kg,
+            "reps": pr.reps,
+            "estimated_1rm": pr.estimated_1rm,
+        }
+        for pr in prs
+    ]

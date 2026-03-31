@@ -25,7 +25,8 @@
     "sectionSocial": "Social",
     "sectionPersonal": "Personal",
     "notes": "Notes",
-    "planning": "Planning"
+    "planning": "Planning",
+    "records": "Records"
   },
   "auth": {
     "login": "Login",
@@ -589,5 +590,13 @@
     "cleared": "Schedule cleared",
     "changeSchedule": "Edit",
     "clearSchedule": "Clear schedule"
+  },
+  "records": {
+    "title": "PR Wall",
+    "totalPrs": "personal records",
+    "noRecords": "No records yet",
+    "noRecordsHint": "Train and beat your records to see them here!",
+    "progression": "1RM Progression",
+    "needMoreData": "Beat this record again to see progression"
   }
 }

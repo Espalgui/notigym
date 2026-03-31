@@ -25,7 +25,8 @@
     "sectionSocial": "Social",
     "sectionPersonal": "Perso",
     "notes": "Bloc-notes",
-    "planning": "Planning"
+    "planning": "Planning",
+    "records": "Records"
   },
   "auth": {
     "login": "Connexion",
@@ -589,5 +590,13 @@
     "cleared": "Planning supprimé",
     "changeSchedule": "Modifier",
     "clearSchedule": "Supprimer le planning"
+  },
+  "records": {
+    "title": "Mur des Records",
+    "totalPrs": "records personnels",
+    "noRecords": "Aucun record",
+    "noRecordsHint": "Entraînez-vous et battez vos records pour les voir ici !",
+    "progression": "Progression 1RM",
+    "needMoreData": "Battez ce record à nouveau pour voir la progression"
   }
 }

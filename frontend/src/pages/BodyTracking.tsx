@@ -23,11 +23,13 @@ import {
   Image,
   X,
   GripVertical,
+  Film,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useThemeStore } from "@/stores/themeStore";
 import toast from "react-hot-toast";
 import { formatDate, formatWeight } from "@/lib/utils";
+import TimelapseViewer from "@/components/tracking/TimelapseViewer";
 
 interface Measurement {
   id: string;
@@ -198,6 +200,7 @@ export default function BodyTracking() {
   const [uploading, setUploading] = useState(false);
   const [photoFilter, setPhotoFilter] = useState<Category>("all");
   const [photoView, setPhotoView] = useState<"gallery" | "compare">("gallery");
+  const [showTimelapse, setShowTimelapse] = useState(false);
   const [beforePhoto, setBeforePhoto] = useState<Photo | null>(null);
   const [afterPhoto, setAfterPhoto] = useState<Photo | null>(null);
   const [selectingFor, setSelectingFor] = useState<"before" | "after" | null>(null);
@@ -520,6 +523,16 @@ export default function BodyTracking() {
               >
                 <ArrowLeftRight className="w-4 h-4" />
                 {t("body.beforeAfter")}
+              </button>
+              <button
+                onClick={() => setShowTimelapse(true)}
+                disabled={filteredPhotos.length < 2}
+                className="px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2
+                           disabled:opacity-40 disabled:cursor-not-allowed
+                           text-onair-muted hover:text-onair-text hover:bg-onair-surface"
+              >
+                <Film className="w-4 h-4" />
+                Timelapse
               </button>
             </div>
 
@@ -863,6 +876,16 @@ export default function BodyTracking() {
               <span>{fmtDateShort(lightboxPhoto.taken_at)}</span>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Timelapse */}
+      <AnimatePresence>
+        {showTimelapse && filteredPhotos.length >= 2 && (
+          <TimelapseViewer
+            photos={filteredPhotos}
+            onClose={() => setShowTimelapse(false)}
+          />
         )}
       </AnimatePresence>
     </div>

@@ -68,6 +68,7 @@ async def register(request: Request, response: Response, user_in: UserCreate, db
     db.add(user)
     await db.flush()
     await db.refresh(user)
+    logger.info("REGISTER success email=%s username=%s ip=%s", user_in.email, user_in.username, request.client.host if request.client else "unknown")
 
     await create_notification(
         db,
@@ -131,13 +132,18 @@ async def login(request: Request, response: Response, login_in: LoginRequest, db
     result = await db.execute(select(User).where(User.email == login_in.email))
     user = result.scalar_one_or_none()
 
+    client_ip = request.client.host if request.client else "unknown"
+
     if not user or not pwd_context.verify(login_in.password, user.password_hash):
+        logger.warning("LOGIN failed email=%s ip=%s reason=invalid_credentials", login_in.email, client_ip)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     if not user.is_active:
+        logger.warning("LOGIN failed email=%s ip=%s reason=account_disabled", login_in.email, client_ip)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
 
     if not user.email_verified:
+        logger.warning("LOGIN failed email=%s ip=%s reason=email_not_verified", login_in.email, client_ip)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email not verified")
 
     if user.is_2fa_enabled:
@@ -158,11 +164,14 @@ async def login(request: Request, response: Response, login_in: LoginRequest, db
                 user.backup_codes = json.dumps(remaining)
                 await db.flush()
             else:
+                logger.warning("LOGIN failed email=%s ip=%s reason=invalid_2fa", login_in.email, client_ip)
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid 2FA code")
 
     access_token = create_access_token({"sub": str(user.id)})
     refresh_token = create_refresh_token({"sub": str(user.id)})
     _set_auth_cookies(response, access_token, refresh_token)
+
+    logger.info("LOGIN success email=%s ip=%s 2fa=%s", user.email, client_ip, user.is_2fa_enabled)
 
     # Send login notification email (fire & forget)
     send_login_notification_email(user.email, user.username)

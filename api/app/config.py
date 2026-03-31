@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     SMTP_FROM: str = "noreply@cyberdev-it.com"
     STRAVA_CLIENT_ID: str = ""
     STRAVA_CLIENT_SECRET: str = ""
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_MAILTO: str = "mailto:guillaume@cyberdev-it.com"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

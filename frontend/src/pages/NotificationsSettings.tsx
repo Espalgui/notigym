@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Bell, BellOff, VolumeX, Volume2, Dumbbell, Users } from "lucide-react";
+import { Bell, BellOff, VolumeX, Volume2, Dumbbell, Users, Smartphone } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface UserForNotification {
   id: string;
@@ -24,6 +25,11 @@ export default function NotificationsSettings() {
   const [loading, setLoading] = useState(true);
   const [togglingGlobal, setTogglingGlobal] = useState(false);
   const [mutingId, setMutingId] = useState<string | null>(null);
+  const { subscribed: pushSubscribed, loading: pushLoading, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe, checkSubscription } = usePushNotifications();
+
+  useEffect(() => {
+    checkSubscription();
+  }, [checkSubscription]);
 
   useEffect(() => {
     Promise.all([
@@ -154,6 +160,51 @@ export default function NotificationsSettings() {
           </button>
         </div>
       </div>
+
+      {/* Push notifications toggle */}
+      {"PushManager" in window && (
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-onair-purple/10">
+                <Smartphone className="w-5 h-5 text-onair-purple" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-onair-text">
+                  {t("notifications.settings.push") || "Notifications push"}
+                </h3>
+                <p className="text-xs text-onair-muted">
+                  {pushSubscribed
+                    ? (t("notifications.settings.pushOn") || "Activées sur cet appareil")
+                    : (t("notifications.settings.pushOff") || "Recevoir des alertes sur cet appareil")}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                if (pushSubscribed) {
+                  await pushUnsubscribe();
+                  toast.success("Push désactivé");
+                } else {
+                  const ok = await pushSubscribe();
+                  if (ok) toast.success("Push activé !");
+                  else toast.error("Impossible d'activer les push");
+                }
+              }}
+              disabled={pushLoading}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-200 flex-shrink-0 ${
+                pushSubscribed ? "bg-onair-purple" : "bg-onair-border"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200 ${
+                  pushSubscribed ? "left-6" : "left-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Category toggles */}
       {prefs.notifications_enabled && (

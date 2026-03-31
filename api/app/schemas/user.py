@@ -25,6 +25,7 @@ class UserUpdate(BaseModel):
     training_type: Literal["musculation", "poids_corps", "machines", "hiit", "isometrie", "mixed"] | None = None
     privacy: Literal["public", "private"] | None = None
     language: str | None = Field(default=None, max_length=10)
+    weekly_sessions_goal: int | None = Field(default=None, ge=1, le=14)
 
 
 class UserResponse(BaseModel):
@@ -44,6 +45,7 @@ class UserResponse(BaseModel):
     is_active: bool
     is_admin: bool = False
     is_2fa_enabled: bool = False
+    weekly_sessions_goal: int | None = None
     created_at: datetime
     updated_at: datetime
 

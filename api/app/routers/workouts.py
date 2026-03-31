@@ -409,6 +409,59 @@ async def get_session_summary(
     }
 
 
+@router.get("/sessions/compare")
+async def compare_sessions(
+    session_a: uuid_mod.UUID = Query(...),
+    session_b: uuid_mod.UUID = Query(...),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Compare two sessions side by side."""
+    results = await db.execute(
+        select(WorkoutSession)
+        .where(WorkoutSession.id.in_([session_a, session_b]), WorkoutSession.user_id == current_user.id)
+        .options(selectinload(WorkoutSession.sets), selectinload(WorkoutSession.program_day))
+    )
+    sessions = {s.id: s for s in results.scalars().unique().all()}
+    if len(sessions) != 2:
+        raise HTTPException(status_code=404, detail="Session(s) not found")
+
+    def summarize(s: WorkoutSession) -> dict:
+        exercise_ids = list({st.exercise_id for st in s.sets})
+        total_volume = sum((st.weight_kg or 0) * (st.reps or 0) for st in s.sets)
+        pr_count = sum(1 for st in s.sets if st.is_pr)
+
+        # Per-exercise breakdown
+        exercises: dict[str, dict] = {}
+        for st in s.sets:
+            eid = str(st.exercise_id)
+            if eid not in exercises:
+                exercises[eid] = {"sets": 0, "volume": 0, "best_weight": 0, "best_reps": 0}
+            exercises[eid]["sets"] += 1
+            exercises[eid]["volume"] += (st.weight_kg or 0) * (st.reps or 0)
+            if (st.weight_kg or 0) > exercises[eid]["best_weight"]:
+                exercises[eid]["best_weight"] = st.weight_kg or 0
+            if (st.reps or 0) > exercises[eid]["best_reps"]:
+                exercises[eid]["best_reps"] = st.reps or 0
+
+        return {
+            "session_id": str(s.id),
+            "started_at": s.started_at.isoformat(),
+            "duration_minutes": s.duration_minutes,
+            "feeling": s.feeling,
+            "exercise_count": len(exercise_ids),
+            "total_sets": len(s.sets),
+            "total_volume": round(total_volume),
+            "pr_count": pr_count,
+            "exercises": exercises,
+        }
+
+    return {
+        "a": summarize(sessions[session_a]),
+        "b": summarize(sessions[session_b]),
+    }
+
+
 @router.get("/sessions", response_model=list[WorkoutSessionResponse])
 async def list_sessions(
     date_from: datetime | None = Query(None),

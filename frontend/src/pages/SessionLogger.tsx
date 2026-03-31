@@ -18,11 +18,13 @@ import {
   TrendingUp,
   Share2,
   Trophy,
+  Download,
 } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { formatDuration } from "@/lib/utils";
 import SessionTimers from "@/components/workout/SessionTimers";
+import SessionExport from "@/components/workout/SessionExport";
 
 interface Exercise {
   id: string;
@@ -90,6 +92,7 @@ export default function SessionLogger() {
   );
   const [supersetLinks, setSupersetLinks] = useState<Set<string>>(new Set());
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [sessionSummary, setSessionSummary] = useState<any>(null);
   const [suggestions, setSuggestions] = useState<Record<string, { weight: number; reps: number; suggested: number } | null>>({});
   const [prefilled, setPrefilled] = useState(false);
@@ -1106,6 +1109,13 @@ export default function SessionLogger() {
                   {lang === "fr" ? "Partager sur le fil" : "Share to feed"}
                 </button>
                 <button
+                  onClick={() => { setShowShareModal(false); setShowExportModal(true); }}
+                  className="btn-ghost w-full flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  {lang === "fr" ? "Exporter en image" : "Export as image"}
+                </button>
+                <button
                   onClick={() => { setShowShareModal(false); navigate("/workouts"); }}
                   className="btn-ghost w-full"
                 >
@@ -1114,6 +1124,16 @@ export default function SessionLogger() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Export Modal */}
+      <AnimatePresence>
+        {showExportModal && sessionSummary && (
+          <SessionExport
+            summary={sessionSummary}
+            onClose={() => { setShowExportModal(false); navigate("/workouts"); }}
+          />
         )}
       </AnimatePresence>
     </div>

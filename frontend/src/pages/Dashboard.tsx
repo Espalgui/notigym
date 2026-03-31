@@ -136,10 +136,15 @@ export default function Dashboard() {
     {
       icon: Flame,
       label: t("dashboard.sessionsWeek"),
-      value: stats?.sessions_this_week ?? 0,
+      value: user?.weekly_sessions_goal
+        ? `${stats?.sessions_this_week ?? 0}/${user.weekly_sessions_goal}`
+        : (stats?.sessions_this_week ?? 0),
       color: "text-onair-amber",
       gradient: "from-onair-amber/15 to-transparent",
       to: "/workouts?tab=history",
+      progress: user?.weekly_sessions_goal
+        ? Math.min(1, (stats?.sessions_this_week ?? 0) / user.weekly_sessions_goal)
+        : undefined,
     },
     {
       icon: Clock,
@@ -219,6 +224,14 @@ export default function Dashboard() {
                   <span className="stat-label">{card.label}</span>
                 </div>
                 <p className={`stat-value ${card.color}`}>{card.value}</p>
+                {"progress" in card && card.progress !== undefined && (
+                  <div className="mt-2 h-1.5 rounded-full bg-onair-surface overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-onair-amber transition-all duration-500"
+                      style={{ width: `${Math.round(card.progress * 100)}%` }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ))}

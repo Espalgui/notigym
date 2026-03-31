@@ -1,13 +1,16 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func, update
+from pydantic import BaseModel
+from sqlalchemy import delete as sa_delete, select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
+from app.config import settings
 from app.database import get_db
 from app.models.notification import Notification
 from app.models.notification_mute import NotificationMute
+from app.models.push_subscription import PushSubscription
 from app.models.user import User
 from app.notifications import PROGRAM_TYPES, COMMUNITY_TYPES
 from app.schemas.notification import (
@@ -209,3 +212,52 @@ async def unmute_user(
     if mute:
         await db.delete(mute)
         await db.flush()
+
+
+# ── Web Push ─────────────────────────────────────────────────────────────────
+
+
+class PushSubscriptionRequest(BaseModel):
+    endpoint: str
+    keys: dict  # {p256dh, auth}
+
+
+@router.get("/push/vapid-key")
+async def get_vapid_public_key():
+    key = getattr(settings, "VAPID_PUBLIC_KEY", None)
+    if not key:
+        raise HTTPException(status_code=501, detail="Push not configured")
+    return {"public_key": key}
+
+
+@router.post("/push/subscribe", status_code=status.HTTP_201_CREATED)
+async def push_subscribe(
+    data: PushSubscriptionRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    # Upsert: remove old sub with same endpoint, then insert
+    await db.execute(sa_delete(PushSubscription).where(PushSubscription.endpoint == data.endpoint))
+    db.add(PushSubscription(
+        user_id=current_user.id,
+        endpoint=data.endpoint,
+        p256dh=data.keys["p256dh"],
+        auth=data.keys["auth"],
+    ))
+    await db.flush()
+    return {"status": "subscribed"}
+
+
+@router.delete("/push/unsubscribe")
+async def push_unsubscribe(
+    data: PushSubscriptionRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await db.execute(
+        sa_delete(PushSubscription).where(
+            PushSubscription.user_id == current_user.id,
+            PushSubscription.endpoint == data.endpoint,
+        )
+    )
+    return {"status": "unsubscribed"}

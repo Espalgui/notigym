@@ -1,32 +1,35 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Layout from "@/components/layout/Layout";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import LanguageSelect from "@/pages/LanguageSelect";
-import Dashboard from "@/pages/Dashboard";
-import Workouts from "@/pages/Workouts";
-import ProgramBuilder from "@/pages/ProgramBuilder";
-import SessionLogger from "@/pages/SessionLogger";
-import BodyTracking from "@/pages/BodyTracking";
-import Nutrition from "@/pages/Nutrition";
-import RecipesPage from "@/pages/Recipes";
-import Notes from "@/pages/Notes";
-import Community from "@/pages/Community";
-import Activity from "@/pages/Activity";
-import Planning from "@/pages/Planning";
-import Records from "@/pages/Records";
-import Achievements from "@/pages/Achievements";
-import Statistics from "@/pages/Statistics";
-import Profile from "@/pages/Profile";
-import Timers from "@/pages/Timers";
-import NotificationsSettings from "@/pages/NotificationsSettings";
-import Admin from "@/pages/Admin";
 import VerifyEmail from "@/pages/VerifyEmail";
 import CheckEmail from "@/pages/CheckEmail";
+
+// Lazy-loaded pages (code splitting)
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Workouts = lazy(() => import("@/pages/Workouts"));
+const ProgramBuilder = lazy(() => import("@/pages/ProgramBuilder"));
+const SessionLogger = lazy(() => import("@/pages/SessionLogger"));
+const BodyTracking = lazy(() => import("@/pages/BodyTracking"));
+const Nutrition = lazy(() => import("@/pages/Nutrition"));
+const RecipesPage = lazy(() => import("@/pages/Recipes"));
+const Notes = lazy(() => import("@/pages/Notes"));
+const Community = lazy(() => import("@/pages/Community"));
+const Activity = lazy(() => import("@/pages/Activity"));
+const Planning = lazy(() => import("@/pages/Planning"));
+const Records = lazy(() => import("@/pages/Records"));
+const Achievements = lazy(() => import("@/pages/Achievements"));
+const Statistics = lazy(() => import("@/pages/Statistics"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const Timers = lazy(() => import("@/pages/Timers"));
+const NotificationsSettings = lazy(() => import("@/pages/NotificationsSettings"));
+const Admin = lazy(() => import("@/pages/Admin"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -87,44 +90,48 @@ export default function App() {
           },
         }}
       />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/language" element={<LanguageSelect />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/check-email" element={<CheckEmail />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="workouts" element={<Workouts />} />
-          <Route path="timers" element={<Timers />} />
-          <Route path="tabata" element={<Navigate to="/timers" replace />} />
-          <Route path="workouts/new" element={<ProgramBuilder />} />
-          <Route path="workouts/program/:id" element={<ProgramBuilder />} />
-          <Route path="workouts/session" element={<SessionLogger />} />
-          <Route path="workouts/session/:id" element={<SessionLogger />} />
-          <Route path="planning" element={<Planning />} />
-          <Route path="records" element={<Records />} />
-          <Route path="achievements" element={<Achievements />} />
-          <Route path="activity" element={<Activity />} />
-          <Route path="statistics" element={<Statistics />} />
-          <Route path="body" element={<BodyTracking />} />
-          <Route path="nutrition" element={<Nutrition />} />
-          <Route path="recipes" element={<RecipesPage />} />
-          <Route path="notes" element={<Notes />} />
-          <Route path="community" element={<Community />} />
-          <Route path="notifications" element={<NotificationsSettings />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="admin" element={<AdminRoute><Admin /></AdminRoute>} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ErrorBoundary>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="live-dot scale-150" /></div>}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/language" element={<LanguageSelect />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/check-email" element={<CheckEmail />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="workouts" element={<Workouts />} />
+              <Route path="timers" element={<Timers />} />
+              <Route path="tabata" element={<Navigate to="/timers" replace />} />
+              <Route path="workouts/new" element={<ProgramBuilder />} />
+              <Route path="workouts/program/:id" element={<ProgramBuilder />} />
+              <Route path="workouts/session" element={<SessionLogger />} />
+              <Route path="workouts/session/:id" element={<SessionLogger />} />
+              <Route path="planning" element={<Planning />} />
+              <Route path="records" element={<Records />} />
+              <Route path="achievements" element={<Achievements />} />
+              <Route path="activity" element={<Activity />} />
+              <Route path="statistics" element={<Statistics />} />
+              <Route path="body" element={<BodyTracking />} />
+              <Route path="nutrition" element={<Nutrition />} />
+              <Route path="recipes" element={<RecipesPage />} />
+              <Route path="notes" element={<Notes />} />
+              <Route path="community" element={<Community />} />
+              <Route path="notifications" element={<NotificationsSettings />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="admin" element={<AdminRoute><Admin /></AdminRoute>} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </>
   );
 }

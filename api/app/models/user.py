@@ -34,6 +34,7 @@ class User(Base):
     totp_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
     is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     backup_codes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    weekly_sessions_goal: Mapped[int | None] = mapped_column(Integer, nullable=True)
     strava_athlete_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     strava_access_token: Mapped[str | None] = mapped_column(String(200), nullable=True)
     strava_refresh_token: Mapped[str | None] = mapped_column(String(200), nullable=True)

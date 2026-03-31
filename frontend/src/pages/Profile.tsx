@@ -267,6 +267,7 @@ export default function Profile() {
     gender: user?.gender || "",
     goal: user?.goal || "",
     training_type: user?.training_type || "",
+    weekly_sessions_goal: user?.weekly_sessions_goal?.toString() || "",
     privacy: user?.privacy || "private",
     language: user?.language || "fr",
   });
@@ -426,6 +427,7 @@ export default function Profile() {
         gender: form.gender || null,
         goal: form.goal || null,
         training_type: form.training_type || null,
+        weekly_sessions_goal: form.weekly_sessions_goal ? parseInt(form.weekly_sessions_goal) : null,
         privacy: form.privacy,
         language: form.language,
       };
@@ -1211,6 +1213,27 @@ export default function Profile() {
                           );
                         })}
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Weekly sessions goal */}
+                  <div>
+                    <label className="block text-sm font-semibold text-onair-text mb-2">
+                      {i18n.language?.startsWith("fr") ? "Objectif séances / semaine" : "Weekly sessions goal"}
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        min="1"
+                        max="14"
+                        value={form.weekly_sessions_goal}
+                        onChange={(e) => setForm({ ...form, weekly_sessions_goal: e.target.value })}
+                        placeholder="4"
+                        className="input w-24 text-center"
+                      />
+                      <span className="text-sm text-onair-muted">
+                        {i18n.language?.startsWith("fr") ? "séances par semaine" : "sessions per week"}
+                      </span>
                     </div>
                   </div>
 

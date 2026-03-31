@@ -12,6 +12,7 @@ interface User {
   gender: string | null;
   goal: string | null;
   training_type: string | null;
+  weekly_sessions_goal: number | null;
   privacy: string;
   language: string;
   is_2fa_enabled: boolean;

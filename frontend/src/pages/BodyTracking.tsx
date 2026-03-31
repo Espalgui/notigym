@@ -58,18 +58,20 @@ function CompareSlider({
   beforeDate,
   afterDate,
   t,
+  lang,
 }: {
   beforeUrl: string;
   afterUrl: string;
   beforeDate: string;
   afterDate: string;
   t: (k: string) => string;
+  lang: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState(50);
   const dragging = useRef(false);
 
-  const locale = "fr-FR";
+  const locale = lang === "fr" ? "fr-FR" : "en-US";
   const fmtDate = (d: string) =>
     new Intl.DateTimeFormat(locale, {
       day: "numeric",
@@ -171,7 +173,8 @@ function CompareSlider({
 
 /* ─── Main Page ─── */
 export default function BodyTracking() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.startsWith("fr") ? "fr" : "en";
   const { theme } = useThemeStore();
   const isDark = theme === "dark";
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -280,7 +283,7 @@ export default function BodyTracking() {
     : photos.filter((p) => p.category === photoFilter);
 
   const fmtDateShort = (d: string) =>
-    new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" }).format(new Date(d));
+    new Intl.DateTimeFormat(lang === "fr" ? "fr-FR" : "en-US", { day: "numeric", month: "short", year: "numeric" }).format(new Date(d));
 
   const weightData = [...measurements]
     .reverse()
@@ -766,6 +769,7 @@ export default function BodyTracking() {
                     beforeDate={beforePhoto.taken_at}
                     afterDate={afterPhoto.taken_at}
                     t={t}
+                    lang={lang}
                   />
                 </motion.div>
               )}

@@ -10,7 +10,7 @@ interface ThemeState {
 
 const stored = localStorage.getItem("notigym_theme") as Theme | null;
 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-const initial: Theme = stored || (prefersDark ? "dark" : "dark");
+const initial: Theme = stored || (prefersDark ? "dark" : "light");
 
 function applyTheme(theme: Theme) {
   const root = document.documentElement;

@@ -223,7 +223,7 @@ export default function NotificationsSettings() {
                     />
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-onair-red to-onair-purple flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                      {user.username[0].toUpperCase()}
+                      {user.username?.[0]?.toUpperCase() ?? "?"}
                     </div>
                   )}
 

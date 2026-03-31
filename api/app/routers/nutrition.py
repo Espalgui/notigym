@@ -89,10 +89,6 @@ async def set_goal(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await db.execute(
-        select(NutritionGoal)
-        .where(NutritionGoal.user_id == current_user.id, NutritionGoal.is_active == True)  # noqa: E712
-    )
     result = await db.execute(
         select(NutritionGoal)
         .where(NutritionGoal.user_id == current_user.id, NutritionGoal.is_active == True)  # noqa: E712

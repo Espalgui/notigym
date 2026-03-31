@@ -39,8 +39,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const ADMIN_EMAIL = "guillaume@cyberdev-it.com";
-
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuthStore();
   if (isLoading) {
@@ -50,7 +48,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  if (!isAuthenticated || !user?.is_admin || user.email !== ADMIN_EMAIL) {
+  if (!isAuthenticated || !user?.is_admin) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-24 text-center gap-4">
         <p className="text-6xl font-display font-bold text-onair-muted/20">404</p>

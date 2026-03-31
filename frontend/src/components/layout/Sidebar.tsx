@@ -81,7 +81,7 @@ const navSections = [
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { t } = useTranslation();
   const { logout, user } = useAuthStore();
-  const isAdmin = (user?.is_admin ?? false) && user?.email === "guillaume@cyberdev-it.com";
+  const isAdmin = user?.is_admin ?? false;
   const { theme, toggle } = useThemeStore();
   const { canInstall, install } = usePWAInstall();
   const navigate = useNavigate();
@@ -278,7 +278,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               />
             ) : (
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-onair-red to-onair-purple flex items-center justify-center text-sm font-bold text-white shadow-sm">
-                {user.username[0].toUpperCase()}
+                {user.username?.[0]?.toUpperCase() ?? "?"}
               </div>
             )}
             <div className="flex-1 min-w-0">

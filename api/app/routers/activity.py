@@ -3,6 +3,7 @@ from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
@@ -42,7 +43,23 @@ async def create_or_update_activity(
 
     activity = DailyActivity(user_id=current_user.id, **data.model_dump())
     db.add(activity)
-    await db.flush()
+    try:
+        await db.flush()
+    except IntegrityError:
+        await db.rollback()
+        # Concurrent insert — retry as update
+        result2 = await db.execute(
+            select(DailyActivity).where(
+                DailyActivity.user_id == current_user.id,
+                DailyActivity.date == data.date,
+            )
+        )
+        existing = result2.scalar_one()
+        for field, value in data.model_dump(exclude={"date"}, exclude_none=True).items():
+            setattr(existing, field, value)
+        await db.flush()
+        await db.refresh(existing)
+        return existing
     await db.refresh(activity)
     return activity
 

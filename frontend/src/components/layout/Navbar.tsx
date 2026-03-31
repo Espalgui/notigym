@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
   Bell,
-  Search,
   CheckCheck,
   Dumbbell,
   Heart,
@@ -129,25 +128,6 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
             <Menu className="w-5 h-5" />
           </button>
 
-          <div
-            className="hidden sm:flex items-center gap-2 rounded-xl px-3 py-2.5 w-72 transition-all duration-200"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            <Search className="w-4 h-4 text-onair-muted flex-shrink-0" />
-            <input
-              type="text"
-              placeholder={t("common.search")}
-              className="bg-transparent border-none p-0 text-sm focus:ring-0 focus:outline-none w-full"
-              style={{
-                background: "transparent",
-                border: "none",
-                boxShadow: "none",
-              }}
-            />
-          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -291,7 +271,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
                 />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-onair-red to-onair-purple flex items-center justify-center text-sm font-bold text-white">
-                  {user.username[0].toUpperCase()}
+                  {user.username?.[0]?.toUpperCase() ?? "?"}
                 </div>
               )}
               <span className="hidden sm:block text-sm font-medium text-onair-text">

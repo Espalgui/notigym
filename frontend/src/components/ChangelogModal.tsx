@@ -13,6 +13,36 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.2.0",
+    date: "2026-03-31",
+    title_fr: "Mise à jour majeure",
+    title_en: "Major Update",
+    changes_fr: [
+      "Succès & Streaks : 18 badges à débloquer, compteur de jours consécutifs",
+      "Mur des Records : visualisez tous vos PRs avec graphe de progression 1RM",
+      "Timer auto : le repos démarre automatiquement après validation d'une série",
+      "Supersets : liez vos exercices pour enchaîner sans repos",
+      "Surcharge progressive : suggestion de poids +2.5% basée sur la dernière séance",
+      "Partage de séance : résumé complet et publication sur le fil communautaire",
+      "Scanner code-barres : scannez un produit pour remplir les macros automatiquement",
+      "Widget hydratation : suivi d'eau avec anneau de progression sur le dashboard",
+      "Timelapse corporel : slideshow animé de vos photos de progression",
+      "Mode auto : le thème suit automatiquement votre système (clair/sombre)",
+    ],
+    changes_en: [
+      "Achievements & Streaks: 18 badges to unlock, consecutive days counter",
+      "PR Wall: view all your personal records with 1RM progression chart",
+      "Auto rest timer: rest countdown starts automatically after validating a set",
+      "Supersets: link exercises to chain them without rest",
+      "Progressive overload: +2.5% weight suggestion based on last session",
+      "Session sharing: full summary and share to community feed",
+      "Barcode scanner: scan a product to auto-fill nutrition macros",
+      "Hydration widget: water tracking with progress ring on dashboard",
+      "Body timelapse: animated slideshow of your progress photos",
+      "Auto mode: theme automatically follows your system (light/dark)",
+    ],
+  },
+  {
     version: "2.1.0",
     date: "2026-03-31",
     title_fr: "Nouveautés",

@@ -247,7 +247,9 @@
       "title": "Keto Recipes",
       "recommended": "Recommended for you",
       "addToLog": "Add to log"
-    }
+    },
+    "scanning": "Scanning...",
+    "cameraPermission": "Unable to access camera. Check permissions in your browser settings."
   },
   "community": {
     "title": "Community",

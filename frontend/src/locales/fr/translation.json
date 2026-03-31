@@ -247,7 +247,9 @@
       "title": "Recettes cétogènes",
       "recommended": "Recommandées pour toi",
       "addToLog": "Ajouter au journal"
-    }
+    },
+    "scanning": "Scan en cours...",
+    "cameraPermission": "Impossible d'accéder à la caméra. Vérifie les permissions dans les paramètres de ton navigateur."
   },
   "community": {
     "title": "Communauté",

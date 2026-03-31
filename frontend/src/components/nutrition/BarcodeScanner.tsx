@@ -16,27 +16,42 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let stream: MediaStream | null = null;
     const reader = new BrowserMultiFormatReader();
     readerRef.current = reader;
 
-    reader
-      .decodeFromConstraints(
-        { video: { facingMode: "environment" } },
-        videoRef.current!,
-        (result, err) => {
+    const startScanner = async () => {
+      try {
+        // Explicitly request camera permission first — required on mobile (iOS Safari)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+
+        // Continuously decode from the already-active video element
+        reader.decodeFromVideoElementContinuously(videoRef.current!, (result) => {
           if (result) {
             const code = result.getText();
             reader.reset();
             onScan(code);
           }
-        }
-      )
-      .catch(() => {
+        });
+      } catch {
         setError(t("nutrition.cameraPermission"));
-      });
+      }
+    };
+
+    startScanner();
 
     return () => {
       reader.reset();
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -65,6 +80,9 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
       <div className="flex-1 relative flex items-center justify-center">
         <video
           ref={videoRef}
+          autoPlay
+          playsInline
+          muted
           className="absolute inset-0 w-full h-full object-cover"
         />
 

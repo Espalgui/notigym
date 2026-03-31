@@ -167,7 +167,8 @@
       "confirmTitle": "Enregistrer la séance ?",
       "confirmSummary": "{{exercises}} exercice(s), {{sets}} série(s) – {{duration}}",
       "confirmHint": "Seules les séries avec un poids et des reps seront sauvegardées.",
-      "prefilled": "Exercices pré-remplis depuis le programme"
+      "prefilled": "Exercices pré-remplis depuis le programme",
+      "sessionComplete": "Séance terminée !"
     },
     "types": {
       "push_pull_legs": "Push/Pull/Legs",

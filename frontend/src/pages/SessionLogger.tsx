@@ -16,6 +16,8 @@ import {
   Info,
   Link2,
   TrendingUp,
+  Share2,
+  Trophy,
 } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
@@ -87,6 +89,8 @@ export default function SessionLogger() {
     localStorage.getItem("notigym_auto_rest_timer") !== "false"
   );
   const [supersetLinks, setSupersetLinks] = useState<Set<string>>(new Set());
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<any>(null);
   const [suggestions, setSuggestions] = useState<Record<string, { weight: number; reps: number; suggested: number } | null>>({});
   const [prefilled, setPrefilled] = useState(false);
   const [programImageUrl, setProgramImageUrl] = useState<string | null>(null);
@@ -264,7 +268,14 @@ export default function SessionLogger() {
         is_completed: true,
       });
       toast.success(t("workouts.session.saved"));
-      navigate("/workouts");
+      // Fetch summary and show share modal
+      try {
+        const summaryRes = await api.get(`/workouts/sessions/${sessionId}/summary`);
+        setSessionSummary(summaryRes.data);
+        setShowShareModal(true);
+      } catch {
+        navigate("/workouts");
+      }
     } catch {
       toast.error(t("common.error"));
     } finally {
@@ -996,6 +1007,100 @@ export default function SessionLogger() {
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Share Modal */}
+      <AnimatePresence>
+        {showShareModal && sessionSummary && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+            onClick={() => { setShowShareModal(false); navigate("/workouts"); }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="card w-full max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center mb-5">
+                <div className="text-4xl mb-2">🎉</div>
+                <h3 className="font-display font-bold text-xl text-onair-text">
+                  {t("workouts.session.sessionComplete")}
+                </h3>
+              </div>
+
+              {/* Summary card */}
+              <div className="bg-onair-surface/50 rounded-xl p-4 mb-5 space-y-2">
+                {sessionSummary.program_name && (
+                  <p className="text-xs text-onair-cyan font-semibold">{sessionSummary.program_name}</p>
+                )}
+                {sessionSummary.day_name && (
+                  <p className="text-sm font-semibold text-onair-text">{sessionSummary.day_name}</p>
+                )}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div>
+                    <p className="text-[10px] text-onair-muted uppercase">{lang === "fr" ? "Durée" : "Duration"}</p>
+                    <p className="text-sm font-bold text-onair-text">{sessionSummary.duration_minutes} min</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-onair-muted uppercase">{lang === "fr" ? "Exercices" : "Exercises"}</p>
+                    <p className="text-sm font-bold text-onair-text">{sessionSummary.exercise_count}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-onair-muted uppercase">Volume</p>
+                    <p className="text-sm font-bold text-onair-text">{sessionSummary.total_volume} kg</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-onair-muted uppercase">
+                      {sessionSummary.feeling ? ["", "😫", "😕", "😐", "😊", "🔥"][sessionSummary.feeling] : ""} {lang === "fr" ? "Ressenti" : "Feeling"}
+                    </p>
+                    <p className="text-sm font-bold text-onair-text">{sessionSummary.total_sets} sets</p>
+                  </div>
+                </div>
+                {sessionSummary.pr_count > 0 && (
+                  <div className="flex items-center gap-2 pt-2 text-onair-amber">
+                    <Trophy className="w-4 h-4" />
+                    <span className="text-xs font-semibold">
+                      {sessionSummary.pr_count} PR{sessionSummary.pr_count > 1 ? "s" : ""} !
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.post("/community/posts", {
+                        post_type: "workout",
+                        content: `${sessionSummary.day_name || sessionSummary.program_name || lang === "fr" ? "Séance" : "Session"} — ${sessionSummary.duration_minutes} min, ${sessionSummary.exercise_count} exercices, ${sessionSummary.total_volume} kg`,
+                        reference_id: sessionSummary.session_id,
+                      });
+                      toast.success(lang === "fr" ? "Publié !" : "Shared!");
+                    } catch {
+                      toast.error(t("common.error"));
+                    }
+                  }}
+                  className="btn-primary w-full flex items-center justify-center gap-2"
+                >
+                  <Share2 className="w-4 h-4" />
+                  {lang === "fr" ? "Partager sur le fil" : "Share to feed"}
+                </button>
+                <button
+                  onClick={() => { setShowShareModal(false); navigate("/workouts"); }}
+                  className="btn-ghost w-full"
+                >
+                  {lang === "fr" ? "Fermer" : "Close"}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

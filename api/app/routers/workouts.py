@@ -365,6 +365,50 @@ async def update_session(
     return result.scalar_one()
 
 
+@router.get("/sessions/{session_id}/summary")
+async def get_session_summary(
+    session_id: uuid_mod.UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get enriched session summary for sharing."""
+    result = await db.execute(
+        select(WorkoutSession)
+        .where(WorkoutSession.id == session_id)
+        .options(selectinload(WorkoutSession.sets), selectinload(WorkoutSession.program_day))
+    )
+    session = result.scalar_one_or_none()
+    if not session or session.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    exercise_ids = list({s.exercise_id for s in session.sets})
+    total_volume = sum((s.weight_kg or 0) * (s.reps or 0) for s in session.sets)
+    pr_count = sum(1 for s in session.sets if s.is_pr)
+
+    # Get program name if linked
+    program_name = None
+    day_name = None
+    if session.program_day:
+        day_name = session.program_day.name
+        prog_result = await db.execute(
+            select(WorkoutProgram.name).where(WorkoutProgram.id == session.program_day.program_id)
+        )
+        program_name = prog_result.scalar()
+
+    return {
+        "session_id": str(session.id),
+        "started_at": session.started_at.isoformat(),
+        "duration_minutes": session.duration_minutes,
+        "feeling": session.feeling,
+        "exercise_count": len(exercise_ids),
+        "total_sets": len(session.sets),
+        "total_volume": round(total_volume),
+        "pr_count": pr_count,
+        "program_name": program_name,
+        "day_name": day_name,
+    }
+
+
 @router.get("/sessions", response_model=list[WorkoutSessionResponse])
 async def list_sessions(
     date_from: datetime | None = Query(None),

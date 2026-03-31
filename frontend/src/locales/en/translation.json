@@ -162,7 +162,8 @@
       "confirmTitle": "Save session?",
       "confirmSummary": "{{exercises}} exercise(s), {{sets}} set(s) – {{duration}}",
       "confirmHint": "Only sets with weight and reps will be saved.",
-      "prefilled": "Exercises prefilled from the program"
+      "prefilled": "Exercises prefilled from the program",
+      "sessionComplete": "Session complete!"
     },
     "favorite": "Favorite",
     "addFavorite": "Add to favorites",

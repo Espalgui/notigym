@@ -28,7 +28,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _COOKIE_OPTS = dict(
     httponly=True,
     secure=settings.APP_ENV == "production",
-    samesite="lax",
+    samesite="strict",
 )
 
 

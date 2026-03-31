@@ -6,6 +6,7 @@ logging.getLogger("app").setLevel(logging.INFO)
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -45,6 +46,13 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    if settings.APP_ENV == "production":
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+    raise exc
 
 # CORS : origines strictes en production, localhost autorisé en dev
 _allow_origins = [settings.FRONTEND_URL]

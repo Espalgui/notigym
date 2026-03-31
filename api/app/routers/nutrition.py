@@ -2,12 +2,13 @@ import uuid as uuid_mod
 from datetime import date, timedelta
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
 from app.database import get_db
+from app.limiter import limiter
 from app.models.nutrition import NutritionEntry, NutritionGoal, WaterIntake
 from app.models.user import User
 from app.schemas.nutrition import (
@@ -28,7 +29,9 @@ router = APIRouter(prefix="/nutrition", tags=["nutrition"])
 # --- OpenFoodFacts Search ---
 
 @router.get("/search-food")
+@limiter.limit("30/minute")
 async def search_food(
+    request: Request,
     q: str = Query(..., min_length=2),
     current_user: User = Depends(get_current_active_user),
 ):

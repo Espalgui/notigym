@@ -37,9 +37,9 @@ async def list_recipes(
     if meal_type:
         query = query.where(Recipe.meal_type == meal_type)
     if goal:
-        query = query.where(Recipe.goals.like(f'%"{goal}"%'))
+        query = query.where(Recipe.goals.contains(goal))
     if tag:
-        query = query.where(Recipe.tags.like(f'%"{tag}"%'))
+        query = query.where(Recipe.tags.contains(tag))
 
     query = query.order_by(Recipe.is_official.desc(), Recipe.created_at.desc())
 

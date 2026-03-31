@@ -1,7 +1,7 @@
 import uuid as uuid_mod
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -12,6 +12,7 @@ from app.models.community import CommunityPost, PostComment, PostLike
 from app.models.notification import Notification
 from app.models.notification_mute import NotificationMute
 from app.models.user import User
+from app.limiter import limiter
 from app.notifications import create_notification
 from app.schemas.community import CommentCreate, CommentResponse, PostCreate, PostResponse
 from app.schemas.user import UserProfile
@@ -57,7 +58,9 @@ async def get_feed(
 
 
 @router.post("/posts", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_post(
+    request: Request,
     data: PostCreate,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
@@ -182,7 +185,9 @@ async def toggle_like(
 
 
 @router.post("/posts/{post_id}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("15/minute")
 async def add_comment(
+    request: Request,
     post_id: uuid_mod.UUID,
     data: CommentCreate,
     current_user: User = Depends(get_current_active_user),

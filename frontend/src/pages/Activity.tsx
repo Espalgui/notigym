@@ -184,7 +184,9 @@ export default function Activity() {
   const handleStravaConnect = async () => {
     try {
       const { data } = await api.get("/strava/connect");
-      window.location.href = data.url;
+      if (typeof data.url === "string" && data.url.startsWith("https://www.strava.com/")) {
+        window.location.href = data.url;
+      }
     } catch { toast.error("Error"); }
   };
 

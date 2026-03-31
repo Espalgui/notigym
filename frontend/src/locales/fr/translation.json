@@ -94,6 +94,9 @@
     "logMeal": "Ajouter un repas",
     "chooseProgram": "Choisir un programme",
     "chooseProgramDesc": "Sélectionnez un programme et un jour pour pré-remplir votre séance.",
+    "water": {
+      "title": "Hydratation"
+    },
     "freeSession": "Séance libre",
     "freeSessionDesc": "Commencer sans programme"
   },

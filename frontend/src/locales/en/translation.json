@@ -94,6 +94,9 @@
     "logMeal": "Log Meal",
     "chooseProgram": "Choose a program",
     "chooseProgramDesc": "Select a program and a day to prefill your session.",
+    "water": {
+      "title": "Hydration"
+    },
     "freeSession": "Free session",
     "freeSessionDesc": "Start without a program"
   },

@@ -13,6 +13,34 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.3.0",
+    date: "2026-03-31",
+    title_fr: "Qualité & Nouvelles fonctionnalités",
+    title_en: "Quality & New Features",
+    changes_fr: [
+      "Export image : exportez et partagez un récap visuel de votre séance",
+      "Comparaison : comparez deux séances côte à côte (volume, PRs, exercices)",
+      "Objectif hebdo : définissez votre cible de séances/semaine avec barre de progression",
+      "Notifications push : activez les alertes sur votre appareil",
+      "Performance : chargement 6x plus rapide grâce au code splitting",
+      "Mode hors ligne : page de fallback quand vous n'avez pas de réseau",
+      "Fix scanner : la caméra fonctionne désormais sur Android et iOS",
+      "Fix partage : publication sur le fil communautaire corrigée",
+      "Anti-refresh : plus de rechargement accidentel pendant l'entraînement",
+    ],
+    changes_en: [
+      "Image export: export and share a visual recap of your session",
+      "Compare: compare two sessions side by side (volume, PRs, exercises)",
+      "Weekly goal: set your weekly sessions target with progress bar",
+      "Push notifications: enable alerts on your device",
+      "Performance: 6x faster loading with code splitting",
+      "Offline mode: fallback page when network is unavailable",
+      "Scanner fix: camera now works on both Android and iOS",
+      "Share fix: community feed posting corrected",
+      "Anti-refresh: no more accidental page reload during workout",
+    ],
+  },
+  {
     version: "2.2.0",
     date: "2026-03-31",
     title_fr: "Mise à jour majeure",

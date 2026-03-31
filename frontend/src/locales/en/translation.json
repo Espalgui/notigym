@@ -26,7 +26,8 @@
     "sectionPersonal": "Personal",
     "notes": "Notes",
     "planning": "Planning",
-    "records": "Records"
+    "records": "Records",
+    "achievements": "Achievements"
   },
   "auth": {
     "login": "Login",
@@ -590,6 +591,12 @@
     "cleared": "Schedule cleared",
     "changeSchedule": "Edit",
     "clearSchedule": "Clear schedule"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "unlocked": "Unlocked",
+    "locked": "Locked",
+    "streakDays": "day streak"
   },
   "records": {
     "title": "PR Wall",

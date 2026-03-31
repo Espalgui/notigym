@@ -25,6 +25,7 @@ import {
   CalendarDays,
   Monitor,
   Trophy,
+  Medal,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { ShieldCheck } from "lucide-react";
@@ -49,6 +50,7 @@ const navSections = [
       { to: "/workouts", icon: Dumbbell, key: "nav.workouts", accent: null },
       { to: "/planning", icon: CalendarDays, key: "nav.planning", accent: null },
       { to: "/records", icon: Trophy, key: "nav.records", accent: "amber" },
+      { to: "/achievements", icon: Medal, key: "nav.achievements", accent: null },
       { to: "/timers", icon: Timer, key: "nav.timers", accent: null },
       { to: "/activity", icon: Footprints, key: "nav.activity", accent: null },
     ],

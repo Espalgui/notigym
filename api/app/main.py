@@ -9,10 +9,11 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import Base, engine
 from app.limiter import limiter
-from app.routers import activity, admin, auth, body, community, exercises, notes, notifications, nutrition, planning, recipes, stats, strava, timers, twofa, users, workouts
+from app.routers import achievements, activity, admin, auth, body, community, exercises, notes, notifications, nutrition, planning, recipes, stats, strava, timers, twofa, users, workouts
 from app.seed import seed_exercises
 from app.seed_recipes import seed_recipes
 from app.seed_users import seed_user_data
+from app.seed_achievements import seed_achievements
 
 
 @asynccontextmanager
@@ -26,6 +27,7 @@ async def lifespan(app: FastAPI):
         await seed_exercises(session)
         await seed_recipes(session)
         await seed_user_data(session)
+        await seed_achievements(session)
 
     yield
 
@@ -70,6 +72,7 @@ app.include_router(strava.router, prefix="/api")
 app.include_router(twofa.router, prefix="/api")
 app.include_router(notes.router, prefix="/api")
 app.include_router(planning.router, prefix="/api")
+app.include_router(achievements.router, prefix="/api")
 
 try:
     import os

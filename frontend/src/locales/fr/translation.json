@@ -26,7 +26,8 @@
     "sectionPersonal": "Perso",
     "notes": "Bloc-notes",
     "planning": "Planning",
-    "records": "Records"
+    "records": "Records",
+    "achievements": "Succès"
   },
   "auth": {
     "login": "Connexion",
@@ -590,6 +591,12 @@
     "cleared": "Planning supprimé",
     "changeSchedule": "Modifier",
     "clearSchedule": "Supprimer le planning"
+  },
+  "achievements": {
+    "title": "Succès",
+    "unlocked": "Débloqués",
+    "locked": "Verrouillé",
+    "streakDays": "jours de suite"
   },
   "records": {
     "title": "Mur des Records",

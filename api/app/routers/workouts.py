@@ -12,6 +12,7 @@ from app.models.user import User
 from app.models.exercise import Exercise
 from app.notifications import create_notification
 from app.services.pr_detection import check_and_record_pr
+from app.services.achievements import check_achievements
 from app.workout_templates import get_templates_for_user
 from app.models.workout import (
     PersonalRecord,
@@ -353,6 +354,8 @@ async def update_session(
             message=f"C'est le moment idéal pour prendre ta dose de protéines, {current_user.username} ! 🥤",
             link="/nutrition",
         )
+        # Check achievements
+        await check_achievements(db, current_user.id, "session_completed")
 
     result = await db.execute(
         select(WorkoutSession)
@@ -429,6 +432,8 @@ async def add_set(
         db, current_user.id, data.exercise_id,
         data.weight_kg, data.reps, s.id, data.is_warmup,
     )
+    if is_new_pr:
+        await check_achievements(db, current_user.id, "new_pr")
     await db.flush()
     await db.refresh(s)
     return s

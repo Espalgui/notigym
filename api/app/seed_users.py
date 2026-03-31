@@ -25,11 +25,12 @@ async def _get_user(db: AsyncSession, username: str) -> User | None:
 
 
 async def _get_exercise(db: AsyncSession, name_en: str) -> Exercise | None:
-    result = await db.execute(select(Exercise).where(Exercise.name_en == name_en))
+    result = await db.execute(select(Exercise).where(Exercise.name_en == name_en).limit(1))
     return result.scalar_one_or_none()
 
 
 async def _user_has_program_named(db: AsyncSession, user_id: uuid.UUID, name: str) -> bool:
+    await db.execute(select(1))  # force fresh state
     result = await db.execute(
         select(WorkoutProgram.id).where(
             WorkoutProgram.user_id == user_id,

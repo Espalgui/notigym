@@ -14,6 +14,7 @@ import {
   Dumbbell,
   Search,
   Info,
+  Link2,
 } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
@@ -84,6 +85,7 @@ export default function SessionLogger() {
   const [autoRestEnabled, setAutoRestEnabled] = useState(() =>
     localStorage.getItem("notigym_auto_rest_timer") !== "false"
   );
+  const [supersetLinks, setSupersetLinks] = useState<Set<string>>(new Set());
   const [prefilled, setPrefilled] = useState(false);
   const [programImageUrl, setProgramImageUrl] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -289,6 +291,35 @@ export default function SessionLogger() {
     }
   };
 
+  // Superset helpers
+  const ssKey = (a: string, b: string) => `${a}|${b}`;
+  const isLinked = (a: string, b: string) => supersetLinks.has(ssKey(a, b));
+  const toggleLink = (a: string, b: string) => {
+    setSupersetLinks((prev) => {
+      const next = new Set(prev);
+      const k = ssKey(a, b);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  };
+  // Get superset color for a group (based on chain of links)
+  const ssColors = ["border-onair-cyan", "border-onair-amber", "border-onair-purple", "border-onair-red"];
+  const getSupersetColor = (groupIdx: number): string | null => {
+    if (groupIdx > 0 && isLinked(groupedSets[groupIdx - 1].exerciseId, groupedSets[groupIdx].exerciseId)) {
+      // Find the start of the chain
+      let start = groupIdx;
+      while (start > 0 && isLinked(groupedSets[start - 1].exerciseId, groupedSets[start].exerciseId)) start--;
+      return ssColors[start % ssColors.length];
+    }
+    if (groupIdx < groupedSets.length - 1 && isLinked(groupedSets[groupIdx].exerciseId, groupedSets[groupIdx + 1].exerciseId)) {
+      let start = groupIdx;
+      while (start > 0 && isLinked(groupedSets[start - 1].exerciseId, groupedSets[start].exerciseId)) start--;
+      return ssColors[start % ssColors.length];
+    }
+    return null;
+  };
+
   const filteredExercises = exercises.filter((e) => {
     const q = searchQuery.toLowerCase();
     return e.name_fr.toLowerCase().includes(q) || e.name_en.toLowerCase().includes(q);
@@ -393,18 +424,26 @@ export default function SessionLogger() {
       {/* Exercise list grouped */}
       {groupedSets.length > 0 ? (
         <div className="space-y-4">
-          {groupedSets.map((group) => (
+          {groupedSets.map((group, groupIdx) => {
+            const ssColor = getSupersetColor(groupIdx);
+            const showLinkAfter = groupIdx < groupedSets.length - 1;
+            return (
+            <div key={group.exerciseId}>
             <motion.div
-              key={group.exerciseId}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="card !p-0 overflow-hidden"
+              className={`card !p-0 overflow-hidden ${ssColor ? `border-l-4 ${ssColor}` : ""}`}
             >
               <div className="px-4 py-3 border-b border-onair-border flex items-center gap-2">
                 <Dumbbell className="w-4 h-4 text-onair-cyan" />
                 <span className="font-semibold text-sm text-onair-text">
                   {group.exerciseName}
                 </span>
+                {ssColor && (
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-onair-surface text-onair-muted">
+                    SS
+                  </span>
+                )}
                 <span className="text-xs text-onair-muted ml-auto">
                   {group.entries.length} {t("workouts.sets").toLowerCase()}
                 </span>
@@ -445,9 +484,13 @@ export default function SessionLogger() {
                                 if (entry.target_reps) entry.reps = entry.target_reps;
                                 if (entry.target_duration) entry.duration_seconds = entry.target_duration;
                                 entry.is_validated = true;
-                                // Auto rest timer
+                                // Auto rest timer (skip if mid-superset)
                                 if (autoRestEnabled && entry.rest_seconds) {
-                                  setAutoRestTrigger({ seconds: entry.rest_seconds, ts: Date.now() });
+                                  const nextGroup = groupedSets[groupIdx + 1];
+                                  const inSuperset = nextGroup && isLinked(group.exerciseId, nextGroup.exerciseId);
+                                  if (!inSuperset) {
+                                    setAutoRestTrigger({ seconds: entry.rest_seconds, ts: Date.now() });
+                                  }
                                 }
                               }
                               return updated;
@@ -554,7 +597,25 @@ export default function SessionLogger() {
                 {t("workouts.session.addSet")}
               </button>
             </motion.div>
-          ))}
+            {/* Superset link button */}
+            {showLinkAfter && (
+              <div className="flex justify-center -my-1.5 relative z-10">
+                <button
+                  onClick={() => toggleLink(group.exerciseId, groupedSets[groupIdx + 1].exerciseId)}
+                  className={`p-1.5 rounded-full border-2 transition-all ${
+                    isLinked(group.exerciseId, groupedSets[groupIdx + 1].exerciseId)
+                      ? "bg-onair-cyan/20 border-onair-cyan text-onair-cyan"
+                      : "bg-onair-bg border-onair-border text-onair-muted hover:border-onair-cyan hover:text-onair-cyan"
+                  }`}
+                  title="Superset"
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            </div>
+          );
+          })}
         </div>
       ) : (
         <div className="card text-center py-10">

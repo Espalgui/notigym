@@ -13,6 +13,24 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.1.0",
+    date: "2026-03-31",
+    title_fr: "Nouveautés",
+    title_en: "What's New",
+    changes_fr: [
+      "Planning hebdomadaire : visualisez et planifiez vos séances de la semaine",
+      "Dashboard interactif : cliquez sur les stats pour accéder directement à l'historique",
+      "RPE (ressenti) : notez chaque série de 0 à 10 pendant vos séances",
+      "Programmes personnalisés ajoutés pour les membres coaching",
+    ],
+    changes_en: [
+      "Weekly planner: visualize and schedule your training week",
+      "Interactive dashboard: click stats to jump straight to history",
+      "RPE (perceived exertion): rate each set from 0 to 10 during sessions",
+      "Custom programs added for coaching members",
+    ],
+  },
+  {
     version: "2.0.0",
     date: "2026-03-26",
     title_fr: "Mise à jour majeure",

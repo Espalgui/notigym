@@ -6,13 +6,13 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart,
 } from "recharts";
 import {
-  Dumbbell, Scale, Apple, TrendingUp, Flame, Target, ChevronRight, Zap, Clock, X, Play, Star,
+  Dumbbell, Scale, Apple, TrendingUp, Flame, Target, ChevronRight, Clock, X, Play, Star,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
-import { formatWeight, formatDate, formatVolume } from "@/lib/utils";
+import { formatWeight, formatDate } from "@/lib/utils";
 
 interface Program {
   id: string;
@@ -140,14 +140,6 @@ export default function Dashboard() {
       value: stats?.sessions_this_month ?? 0,
       color: "text-onair-purple",
       gradient: "from-onair-purple/15 to-transparent",
-      to: "/workouts?tab=history",
-    },
-    {
-      icon: Zap,
-      label: t("dashboard.totalVolume"),
-      value: stats ? formatVolume(stats.total_volume_kg) : "0kg",
-      color: "text-onair-cyan",
-      gradient: "from-onair-cyan/15 to-transparent",
       to: "/workouts?tab=history",
     },
     {

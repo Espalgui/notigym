@@ -188,7 +188,7 @@ export default function SessionLogger() {
     [sets, lang]
   );
 
-  const updateSet = (idx: number, field: string, value: number | boolean) => {
+  const updateSet = (idx: number, field: string, value: number | boolean | null) => {
     setSets((prev) => {
       const updated = [...prev];
       (updated[idx] as any)[field] = value;

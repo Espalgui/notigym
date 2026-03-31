@@ -41,6 +41,7 @@ interface SetEntry {
   target_reps?: number;
   target_duration?: number;
   is_validated?: boolean;
+  rest_seconds?: number;
 }
 
 function exName(ex: Exercise | undefined, lang: string): string {
@@ -79,6 +80,10 @@ export default function SessionLogger() {
   const [saving, setSaving] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
+  const [autoRestTrigger, setAutoRestTrigger] = useState<{ seconds: number; ts: number } | undefined>();
+  const [autoRestEnabled, setAutoRestEnabled] = useState(() =>
+    localStorage.getItem("notigym_auto_rest_timer") !== "false"
+  );
   const [prefilled, setPrefilled] = useState(false);
   const [programImageUrl, setProgramImageUrl] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -151,6 +156,7 @@ export default function SessionLogger() {
                   target_reps: isDuration ? 0 : pe.reps_min,
                   target_duration: isDuration ? pe.reps_min : 0,
                   is_validated: false,
+                  rest_seconds: pe.rest_seconds,
                 });
               }
             }
@@ -337,9 +343,26 @@ export default function SessionLogger() {
             {t("dashboard.onAir")}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-onair-cyan font-mono text-lg">
-          <Timer className="w-5 h-5" />
-          {formatDuration(elapsed)}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-onair-cyan font-mono text-lg">
+            <Timer className="w-5 h-5" />
+            {formatDuration(elapsed)}
+          </div>
+          <button
+            onClick={() => {
+              const next = !autoRestEnabled;
+              setAutoRestEnabled(next);
+              localStorage.setItem("notigym_auto_rest_timer", String(next));
+            }}
+            className={`px-2 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+              autoRestEnabled
+                ? "bg-onair-cyan/15 text-onair-cyan"
+                : "bg-onair-surface text-onair-muted"
+            }`}
+            title={autoRestEnabled ? "Auto timer ON" : "Auto timer OFF"}
+          >
+            Auto
+          </button>
         </div>
       </div>
 
@@ -388,10 +411,10 @@ export default function SessionLogger() {
               </div>
               <div className="divide-y divide-onair-border/50">
                 {/* Column headers */}
-                <div className="grid grid-cols-[2.5rem_1fr_1fr_1fr_3rem_2.5rem_2.5rem] gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
+                <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2rem_2rem] gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">
                   <span className="text-center">#</span>
-                  <span className="text-center">{t("workouts.weight")}</span>
-                  <span className="text-center">{t("workouts.reps")}</span>
+                  <span className="text-center">Kg</span>
+                  <span className="text-center">Reps</span>
                   <span className="text-center">Sec</span>
                   <span className="text-center">RPE</span>
                   <span className="text-center">W</span>
@@ -403,7 +426,7 @@ export default function SessionLogger() {
                   return (
                     <div
                       key={globalIdx}
-                      className={`grid grid-cols-[2.5rem_1fr_1fr_1fr_3rem_2.5rem_2.5rem] gap-2 px-4 py-2.5 items-center transition-colors ${
+                      className={`grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2rem_2rem] gap-2 px-4 py-2.5 items-center transition-colors ${
                         s.is_validated ? "bg-onair-green/10" : isValid ? "bg-onair-green/5" : ""
                       } ${s.is_warmup ? "border-l-2 border-onair-amber" : ""}`}
                     >
@@ -422,6 +445,10 @@ export default function SessionLogger() {
                                 if (entry.target_reps) entry.reps = entry.target_reps;
                                 if (entry.target_duration) entry.duration_seconds = entry.target_duration;
                                 entry.is_validated = true;
+                                // Auto rest timer
+                                if (autoRestEnabled && entry.rest_seconds) {
+                                  setAutoRestTrigger({ seconds: entry.rest_seconds, ts: Date.now() });
+                                }
                               }
                               return updated;
                             });
@@ -448,7 +475,7 @@ export default function SessionLogger() {
                         onChange={(e) =>
                           updateSet(globalIdx, "weight_kg", +e.target.value)
                         }
-                        className="text-center text-sm p-1.5 rounded-lg"
+                        className="text-center text-xs p-1 rounded-lg w-full"
                         placeholder="kg"
                         min={0}
                         step={0.5}
@@ -459,7 +486,7 @@ export default function SessionLogger() {
                         onChange={(e) =>
                           updateSet(globalIdx, "reps", +e.target.value)
                         }
-                        className="text-center text-sm p-1.5 rounded-lg"
+                        className="text-center text-xs p-1 rounded-lg w-full"
                         placeholder={s.target_reps ? `${s.target_reps}` : "reps"}
                         min={0}
                       />
@@ -469,7 +496,7 @@ export default function SessionLogger() {
                         onChange={(e) =>
                           updateSet(globalIdx, "duration_seconds", +e.target.value)
                         }
-                        className="text-center text-sm p-1.5 rounded-lg"
+                        className="text-center text-xs p-1 rounded-lg w-full"
                         placeholder={s.target_duration ? `${s.target_duration}` : "sec"}
                         min={0}
                       />
@@ -488,7 +515,7 @@ export default function SessionLogger() {
                             updateSet(globalIdx, "rpe", Math.min(10, Math.max(0, val)));
                           }
                         }}
-                        className="text-center text-sm p-1.5 rounded-lg"
+                        className="text-center text-xs p-1 rounded-lg w-full"
                         placeholder="RPE"
                       />
                       <button
@@ -608,7 +635,7 @@ export default function SessionLogger() {
       )}
 
       {/* Session Timers (floating) */}
-      <SessionTimers />
+      <SessionTimers autoRestTrigger={autoRestTrigger} />
 
       {/* Bottom action bar */}
       <div className="fixed bottom-0 left-0 right-0 z-20 p-4 glass border-t border-onair-border">

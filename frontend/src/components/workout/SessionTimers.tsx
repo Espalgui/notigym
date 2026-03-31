@@ -54,7 +54,7 @@ function useTimerAudio() {
 // ── Simple Rest Timer ────────────────────────────────────────────────
 const REST_PRESETS = [30, 60, 90, 120, 180];
 
-function RestTimer() {
+function RestTimer({ autoStart }: { autoStart?: { seconds: number; ts: number } }) {
   const { t } = useTranslation();
   const audio = useTimerAudio();
 
@@ -65,6 +65,8 @@ function RestTimer() {
 
   const remainingRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoTsRef = useRef(0);
+  const startRef = useRef<(s: number) => void>();
 
   const stop = useCallback(() => {
     if (intervalRef.current) {
@@ -75,10 +77,10 @@ function RestTimer() {
 
   useEffect(() => () => stop(), [stop]);
 
-  const start = (seconds: number) => {
+  const runTimer = useCallback((seconds: number) => {
     stop();
-    setDuration(seconds);
     remainingRef.current = seconds;
+    setDuration(seconds);
     setRemaining(seconds);
     setRunning(true);
 
@@ -95,9 +97,14 @@ function RestTimer() {
         intervalRef.current = null;
         setRunning(false);
         audio.playDone();
+        navigator.vibrate?.([200, 100, 200]);
       }
     }, 1000);
-  };
+  }, [stop, audio]);
+
+  startRef.current = runTimer;
+
+  const start = (seconds: number) => runTimer(seconds);
 
   const pause = () => {
     stop();
@@ -120,9 +127,20 @@ function RestTimer() {
         intervalRef.current = null;
         setRunning(false);
         audio.playDone();
+        navigator.vibrate?.([200, 100, 200]);
       }
     }, 1000);
   };
+
+  // Auto-start: runs on mount if autoStart is set, and on subsequent changes
+  useEffect(() => {
+    if (autoStart && autoStart.ts > 0 && autoStart.ts !== autoTsRef.current) {
+      autoTsRef.current = autoStart.ts;
+      // Small delay to let component fully mount
+      const t = setTimeout(() => startRef.current?.(autoStart.seconds), 100);
+      return () => clearTimeout(t);
+    }
+  }, [autoStart]);
 
   const reset = () => {
     stop();
@@ -512,10 +530,24 @@ function InlineTabata() {
 // ── Main exported component ──────────────────────────────────────────
 type TimerTab = "rest" | "tabata";
 
-export default function SessionTimers() {
+interface SessionTimersProps {
+  autoRestTrigger?: { seconds: number; ts: number };
+}
+
+export default function SessionTimers({ autoRestTrigger }: SessionTimersProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TimerTab>("rest");
+
+  // Auto-open when triggered
+  const autoTsRef = useRef(0);
+  useEffect(() => {
+    if (autoRestTrigger && autoRestTrigger.ts !== autoTsRef.current) {
+      autoTsRef.current = autoRestTrigger.ts;
+      setOpen(true);
+      setTab("rest");
+    }
+  }, [autoRestTrigger]);
 
   // Keep button position stable during pinch-zoom
   const [vvOffset, setVvOffset] = useState({ bottom: 80, right: 16 });
@@ -589,7 +621,7 @@ export default function SessionTimers() {
             </div>
 
             {/* Content */}
-            {tab === "rest" ? <RestTimer /> : <InlineTabata />}
+            {tab === "rest" ? <RestTimer autoStart={autoRestTrigger} /> : <InlineTabata />}
           </motion.div>
         )}
       </AnimatePresence>

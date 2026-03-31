@@ -15,6 +15,7 @@ import {
   Search,
   Info,
   Link2,
+  TrendingUp,
 } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
@@ -86,6 +87,7 @@ export default function SessionLogger() {
     localStorage.getItem("notigym_auto_rest_timer") !== "false"
   );
   const [supersetLinks, setSupersetLinks] = useState<Set<string>>(new Set());
+  const [suggestions, setSuggestions] = useState<Record<string, { weight: number; reps: number; suggested: number } | null>>({});
   const [prefilled, setPrefilled] = useState(false);
   const [programImageUrl, setProgramImageUrl] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -165,6 +167,25 @@ export default function SessionLogger() {
             if (prefillSets.length > 0) {
               setSets(prefillSets);
               setPrefilled(true);
+              // Fetch overload suggestions
+              const uniqueExIds = [...new Set(prefillSets.map((s) => s.exercise_id))];
+              Promise.all(
+                uniqueExIds.map((exId) =>
+                  api.get(`/workouts/exercises/${exId}/last-performance`).then((r) => ({ exId, data: r.data })).catch(() => null)
+                )
+              ).then((results) => {
+                const sugg: Record<string, { weight: number; reps: number; suggested: number } | null> = {};
+                for (const r of results) {
+                  if (!r || !r.data.sets || r.data.sets.length === 0) continue;
+                  const lastSets = r.data.sets.filter((s: any) => s.weight_kg > 0);
+                  if (lastSets.length === 0) continue;
+                  const avgWeight = lastSets.reduce((sum: number, s: any) => sum + s.weight_kg, 0) / lastSets.length;
+                  const avgReps = Math.round(lastSets.reduce((sum: number, s: any) => sum + (s.reps || 0), 0) / lastSets.length);
+                  const suggested = Math.round((avgWeight * 1.025) * 2) / 2; // +2.5%, round to 0.5kg
+                  sugg[r.exId] = { weight: avgWeight, reps: avgReps, suggested };
+                }
+                setSuggestions(sugg);
+              });
             }
           }
         } catch { /* ignore prefill errors */ }
@@ -448,6 +469,16 @@ export default function SessionLogger() {
                   {group.entries.length} {t("workouts.sets").toLowerCase()}
                 </span>
               </div>
+              {/* Overload suggestion */}
+              {suggestions[group.exerciseId] && suggestions[group.exerciseId]!.suggested !== suggestions[group.exerciseId]!.weight && (
+                <div className="px-4 py-1.5 bg-onair-amber/5 flex items-center gap-2 text-xs text-onair-amber">
+                  <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>
+                    {lang === "fr" ? "Dernière" : "Last"}: {suggestions[group.exerciseId]!.weight}kg × {suggestions[group.exerciseId]!.reps} →{" "}
+                    <span className="font-semibold">{suggestions[group.exerciseId]!.suggested}kg</span>
+                  </span>
+                </div>
+              )}
               <div className="divide-y divide-onair-border/50">
                 {/* Column headers */}
                 <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2rem_2rem] gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-onair-muted font-medium">

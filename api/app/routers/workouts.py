@@ -475,6 +475,62 @@ async def delete_set(
     return None
 
 
+# --- Progressive Overload ---
+
+@router.get("/exercises/{exercise_id}/last-performance")
+async def get_last_performance(
+    exercise_id: uuid_mod.UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get the last session's sets for a given exercise (for overload suggestions)."""
+    # Find the most recent completed session that has sets for this exercise
+    subq = (
+        select(WorkoutSession.id)
+        .join(SessionSet, SessionSet.session_id == WorkoutSession.id)
+        .where(
+            WorkoutSession.user_id == current_user.id,
+            WorkoutSession.is_completed == True,  # noqa: E712
+            SessionSet.exercise_id == exercise_id,
+        )
+        .order_by(WorkoutSession.started_at.desc())
+        .limit(1)
+    ).scalar_subquery()
+
+    result = await db.execute(
+        select(SessionSet)
+        .where(
+            SessionSet.session_id == subq,
+            SessionSet.exercise_id == exercise_id,
+            SessionSet.is_warmup == False,  # noqa: E712
+        )
+        .order_by(SessionSet.set_number)
+    )
+    sets = result.scalars().all()
+
+    if not sets:
+        return {"sets": [], "session_date": None}
+
+    # Get session date
+    sess_result = await db.execute(
+        select(WorkoutSession.started_at).where(WorkoutSession.id == sets[0].session_id)
+    )
+    session_date = sess_result.scalar()
+
+    return {
+        "sets": [
+            {
+                "set_number": s.set_number,
+                "weight_kg": s.weight_kg,
+                "reps": s.reps,
+                "duration_seconds": s.duration_seconds,
+            }
+            for s in sets
+        ],
+        "session_date": session_date.isoformat() if session_date else None,
+    }
+
+
 # --- Personal Records ---
 
 @router.get("/records", response_model=list[PersonalRecordResponse])

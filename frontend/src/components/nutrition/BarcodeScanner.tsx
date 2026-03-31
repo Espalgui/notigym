@@ -1,38 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { X, Camera } from "lucide-react";
 import { BrowserMultiFormatReader } from "@zxing/library";
 
 interface BarcodeScannerProps {
+  stream: MediaStream;
   onScan: (barcode: string) => void;
   onClose: () => void;
 }
 
-export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
+export default function BarcodeScanner({ stream, onScan, onClose }: BarcodeScannerProps) {
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let stream: MediaStream | null = null;
     const reader = new BrowserMultiFormatReader();
     readerRef.current = reader;
 
-    const startScanner = async () => {
-      try {
-        // Explicitly request camera permission first — required on mobile (iOS Safari)
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-        });
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-
-        // Continuously decode from the already-active video element
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().then(() => {
         reader.decodeFromVideoElementContinuously(videoRef.current!, (result) => {
           if (result) {
             const code = result.getText();
@@ -40,18 +29,11 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
             onScan(code);
           }
         });
-      } catch {
-        setError(t("nutrition.cameraPermission"));
-      }
-    };
-
-    startScanner();
+      });
+    }
 
     return () => {
       reader.reset();
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -102,14 +84,6 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
           />
         </div>
 
-        {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
-            <div className="text-center px-6">
-              <Camera className="w-12 h-12 text-onair-muted mx-auto mb-3" />
-              <p className="text-white text-sm">{error}</p>
-            </div>
-          </div>
-        )}
       </div>
     </motion.div>
   );

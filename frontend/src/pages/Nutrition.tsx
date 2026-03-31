@@ -84,7 +84,7 @@ export default function Nutrition() {
   const [foodSearch, setFoodSearch] = useState("");
   const [foodResults, setFoodResults] = useState<{ name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; image_url?: string }[]>([]);
   const [searchingFood, setSearchingFood] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const searchTimeout = useState<ReturnType<typeof setTimeout> | null>(null);
   const [per100, setPer100] = useState<{ calories: number; protein_g: number; carbs_g: number; fat_g: number } | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -145,8 +145,15 @@ export default function Nutrition() {
     setFoodResults([]);
   };
 
+  const closeScanner = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+  };
+
   const handleBarcodeScan = async (barcode: string) => {
-    setShowScanner(false);
+    closeScanner();
     try {
       const { data } = await api.get(`/nutrition/product/${barcode}`);
       selectFood(data);
@@ -601,7 +608,14 @@ export default function Nutrition() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setShowScanner(true)}
+                    onClick={async () => {
+                      try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                        setCameraStream(stream);
+                      } catch {
+                        toast.error(t("nutrition.cameraPermission"));
+                      }
+                    }}
                     className="px-3 rounded-xl bg-onair-cyan/10 text-onair-cyan hover:bg-onair-cyan/20 transition-colors flex items-center gap-1.5"
                     title={lang?.startsWith("fr") ? "Scanner un code-barres" : "Scan barcode"}
                   >
@@ -866,10 +880,11 @@ export default function Nutrition() {
       )}
       {/* Barcode Scanner */}
       <AnimatePresence>
-        {showScanner && (
+        {cameraStream && (
           <BarcodeScanner
+            stream={cameraStream}
             onScan={handleBarcodeScan}
-            onClose={() => setShowScanner(false)}
+            onClose={closeScanner}
           />
         )}
       </AnimatePresence>

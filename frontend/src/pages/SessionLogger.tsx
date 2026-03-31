@@ -112,6 +112,15 @@ export default function SessionLogger() {
       .catch(() => {});
   }, []);
 
+  // Disable pull-to-refresh while session is active
+  useEffect(() => {
+    if (!sessionId) return;
+    document.body.style.overscrollBehavior = "contain";
+    return () => {
+      document.body.style.overscrollBehavior = "";
+    };
+  }, [sessionId]);
+
   useEffect(() => {
     if (!startTime) return;
     const interval = setInterval(() => {
@@ -1078,10 +1087,11 @@ export default function SessionLogger() {
                 <button
                   onClick={async () => {
                     try {
+                      const label = sessionSummary.day_name || sessionSummary.program_name || (lang === "fr" ? "Séance" : "Session");
                       await api.post("/community/posts", {
                         post_type: "workout",
-                        content: `${sessionSummary.day_name || sessionSummary.program_name || lang === "fr" ? "Séance" : "Session"} — ${sessionSummary.duration_minutes} min, ${sessionSummary.exercise_count} exercices, ${sessionSummary.total_volume} kg`,
-                        reference_id: sessionSummary.session_id,
+                        content: `${label} — ${sessionSummary.duration_minutes} min, ${sessionSummary.exercise_count} ${lang === "fr" ? "exercices" : "exercises"}, ${sessionSummary.total_volume} kg`,
+                        reference_id: String(sessionSummary.session_id),
                       });
                       toast.success(lang === "fr" ? "Publié !" : "Shared!");
                     } catch {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Dumbbell, Calendar, Trophy, ChevronRight, Play, Sparkles, Download, Clock, Target, ChevronDown, Flame, Star, X } from "lucide-react";
+import { Plus, Dumbbell, Calendar, Trophy, ChevronRight, Play, Sparkles, Download, Clock, Target, ChevronDown, Flame, Star, X, Share2 } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { formatDateTime, formatDuration, formatVolume } from "@/lib/utils";
@@ -641,6 +641,28 @@ export default function Workouts() {
                               {session.notes}
                             </div>
                           )}
+                          <div className="px-4 py-3 border-t border-onair-border/50">
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const label = lang === "fr" ? "Séance" : "Session";
+                                  await api.post("/community/posts", {
+                                    post_type: "workout",
+                                    content: `${label} — ${session.duration_minutes ?? "?"} min, ${exerciseIds.length} ${lang === "fr" ? "exercices" : "exercises"}, ${formatVolume(totalVolume)}`,
+                                    reference_id: String(session.id),
+                                  });
+                                  toast.success(lang === "fr" ? "Publié !" : "Shared!");
+                                } catch {
+                                  toast.error(t("common.error"));
+                                }
+                              }}
+                              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-onair-cyan/10 text-onair-cyan text-xs font-semibold hover:bg-onair-cyan/20 transition-colors"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                              {lang === "fr" ? "Partager sur le fil" : "Share to feed"}
+                            </button>
+                          </div>
                         </div>
                       </motion.div>
                     )}

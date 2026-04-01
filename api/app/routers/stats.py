@@ -1,3 +1,4 @@
+import calendar
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
@@ -24,6 +25,76 @@ def _date_range(period: str) -> tuple[datetime, datetime]:
     else:
         start = now - timedelta(days=30)
     return start, now
+
+
+def _month_range(year: int, month: int) -> tuple[datetime, datetime]:
+    start = datetime(year, month, 1, tzinfo=timezone.utc)
+    last_day = calendar.monthrange(year, month)[1]
+    end = datetime(year, month, last_day, 23, 59, 59, tzinfo=timezone.utc)
+    return start, end
+
+
+async def _get_period_summary(uid, start: datetime, end: datetime, db: AsyncSession) -> dict:
+    total_sessions_q = await db.execute(
+        select(func.count(WorkoutSession.id)).where(
+            WorkoutSession.user_id == uid,
+            WorkoutSession.is_completed.is_(True),
+            WorkoutSession.started_at >= start,
+            WorkoutSession.started_at <= end,
+        )
+    )
+    total_sessions = total_sessions_q.scalar() or 0
+
+    total_volume_q = await db.execute(
+        select(func.coalesce(func.sum(SessionSet.weight_kg * SessionSet.reps), 0))
+        .join(WorkoutSession, SessionSet.session_id == WorkoutSession.id)
+        .where(
+            WorkoutSession.user_id == uid,
+            WorkoutSession.is_completed.is_(True),
+            WorkoutSession.started_at >= start,
+            WorkoutSession.started_at <= end,
+        )
+    )
+    total_volume = round(float(total_volume_q.scalar() or 0), 1)
+
+    total_prs_q = await db.execute(
+        select(func.count(PersonalRecord.id)).where(
+            PersonalRecord.user_id == uid,
+            PersonalRecord.achieved_at >= start,
+            PersonalRecord.achieved_at <= end,
+        )
+    )
+    total_prs = total_prs_q.scalar() or 0
+
+    avg_duration_q = await db.execute(
+        select(func.coalesce(func.avg(WorkoutSession.duration_minutes), 0)).where(
+            WorkoutSession.user_id == uid,
+            WorkoutSession.is_completed.is_(True),
+            WorkoutSession.started_at >= start,
+            WorkoutSession.started_at <= end,
+        )
+    )
+    avg_duration = round(float(avg_duration_q.scalar() or 0), 1)
+
+    cal_per_day_q = (
+        select(func.sum(NutritionEntry.calories).label("daily_cal"))
+        .where(
+            NutritionEntry.user_id == uid,
+            NutritionEntry.date >= start.date(),
+            NutritionEntry.date <= end.date(),
+        )
+        .group_by(NutritionEntry.date)
+    )
+    cal_rows = (await db.execute(cal_per_day_q)).scalars().all()
+    avg_calories = round(sum(cal_rows) / len(cal_rows), 0) if cal_rows else 0
+
+    return {
+        "total_sessions": total_sessions,
+        "total_volume_kg": total_volume,
+        "total_prs": total_prs,
+        "avg_duration_min": avg_duration,
+        "avg_daily_calories": int(avg_calories),
+    }
 
 
 @router.get("/progression")
@@ -296,4 +367,25 @@ async def get_progression(
         "water": water_data,
         "personal_records": pr_data,
         "activity": activity_data,
+    }
+
+
+@router.get("/compare")
+async def compare_periods(
+    period_a: str = Query(..., regex=r"^\d{4}-\d{2}$"),
+    period_b: str = Query(..., regex=r"^\d{4}-\d{2}$"),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    ya, ma = int(period_a[:4]), int(period_a[5:])
+    yb, mb = int(period_b[:4]), int(period_b[5:])
+    start_a, end_a = _month_range(ya, ma)
+    start_b, end_b = _month_range(yb, mb)
+
+    summary_a = await _get_period_summary(current_user.id, start_a, end_a, db)
+    summary_b = await _get_period_summary(current_user.id, start_b, end_b, db)
+
+    return {
+        "period_a": {"period": period_a, **summary_a},
+        "period_b": {"period": period_b, **summary_b},
     }

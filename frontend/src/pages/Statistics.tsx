@@ -27,6 +27,10 @@ import {
   CalendarDays,
   CalendarRange,
   Calendar,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  GitCompare,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useThemeStore } from "@/stores/themeStore";
@@ -84,11 +88,34 @@ function formatVolume(kg: number): string {
 }
 
 export default function Statistics() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.startsWith("fr") ? "fr" : "en";
   const { resolvedTheme: theme } = useThemeStore();
   const [period, setPeriod] = useState<Period>("month");
   const [data, setData] = useState<ProgressionData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Compare mode
+  const [compareMode, setCompareMode] = useState(false);
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const prevMonth = now.getMonth() === 0
+    ? `${now.getFullYear() - 1}-12`
+    : `${now.getFullYear()}-${String(now.getMonth()).padStart(2, "0")}`;
+  const [compareA, setCompareA] = useState(currentMonth);
+  const [compareB, setCompareB] = useState(prevMonth);
+  const [compareData, setCompareData] = useState<{ period_a: any; period_b: any } | null>(null);
+  const [compareLoading, setCompareLoading] = useState(false);
+
+  useEffect(() => {
+    if (compareMode) {
+      setCompareLoading(true);
+      api.get(`/stats/compare?period_a=${compareA}&period_b=${compareB}`)
+        .then((r) => setCompareData(r.data))
+        .catch(() => setCompareData(null))
+        .finally(() => setCompareLoading(false));
+    }
+  }, [compareMode, compareA, compareB]);
 
   useEffect(() => {
     setLoading(true);
@@ -225,13 +252,86 @@ export default function Statistics() {
         </div>
       </motion.div>
 
-      {loading && (
+      {/* Compare Toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setCompareMode(!compareMode)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+            compareMode
+              ? "bg-onair-cyan/15 text-onair-cyan"
+              : "bg-onair-surface text-onair-muted hover:text-onair-text"
+          }`}
+        >
+          <GitCompare className="w-4 h-4" />
+          {lang === "fr" ? "Comparer" : "Compare"}
+        </button>
+        {compareMode && (
+          <div className="flex items-center gap-2">
+            <input
+              type="month"
+              value={compareA}
+              onChange={(e) => setCompareA(e.target.value)}
+              className="text-xs !py-1.5"
+            />
+            <span className="text-onair-muted text-xs">vs</span>
+            <input
+              type="month"
+              value={compareB}
+              onChange={(e) => setCompareB(e.target.value)}
+              className="text-xs !py-1.5"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Compare Results */}
+      {compareMode && compareData && !compareLoading && (
+        <motion.div {...fadeIn}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[
+              { label: lang === "fr" ? "Séances" : "Sessions", a: compareData.period_a.total_sessions, b: compareData.period_b.total_sessions, unit: "" },
+              { label: lang === "fr" ? "Volume" : "Volume", a: compareData.period_a.total_volume_kg, b: compareData.period_b.total_volume_kg, unit: "kg", format: true },
+              { label: "PRs", a: compareData.period_a.total_prs, b: compareData.period_b.total_prs, unit: "" },
+              { label: lang === "fr" ? "Durée moy." : "Avg duration", a: compareData.period_a.avg_duration_min, b: compareData.period_b.avg_duration_min, unit: "min" },
+              { label: lang === "fr" ? "Kcal moy./j" : "Avg kcal/day", a: compareData.period_a.avg_daily_calories, b: compareData.period_b.avg_daily_calories, unit: "" },
+            ].map((stat) => {
+              const diff = stat.a - stat.b;
+              const pct = stat.b > 0 ? Math.round((diff / stat.b) * 100) : 0;
+              return (
+                <div key={stat.label} className="card text-center space-y-1">
+                  <p className="text-[10px] text-onair-muted uppercase tracking-wider">{stat.label}</p>
+                  <p className="text-lg font-bold text-onair-text">
+                    {stat.format ? formatVolume(stat.a) : Math.round(stat.a)}{stat.unit && ` ${stat.unit}`}
+                  </p>
+                  <p className="text-xs text-onair-muted">
+                    vs {stat.format ? formatVolume(stat.b) : Math.round(stat.b)}{stat.unit && ` ${stat.unit}`}
+                  </p>
+                  <div className={`flex items-center justify-center gap-1 text-xs font-semibold ${
+                    diff > 0 ? "text-onair-green" : diff < 0 ? "text-onair-red" : "text-onair-muted"
+                  }`}>
+                    {diff > 0 ? <ArrowUpRight className="w-3 h-3" /> : diff < 0 ? <ArrowDownRight className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                    {pct !== 0 ? `${pct > 0 ? "+" : ""}${pct}%` : "="}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
+      {compareMode && compareLoading && (
+        <div className="flex items-center justify-center py-10">
+          <div className="live-dot scale-150" />
+        </div>
+      )}
+
+      {loading && !compareMode && (
         <div className="flex items-center justify-center py-20">
           <div className="live-dot scale-150" />
         </div>
       )}
 
-      {!loading && data && (
+      {!loading && data && !compareMode && (
         <>
           {/* Summary Cards */}
           <motion.div {...fadeIn} transition={{ delay: 0.1 }}>

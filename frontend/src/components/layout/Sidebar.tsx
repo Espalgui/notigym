@@ -324,30 +324,32 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       {/* Mobile sidebar */}
       <AnimatePresence>
         {open && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+          <motion.div
+            key="mobile-sidebar-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          />
+        )}
+        {open && (
+          <motion.aside
+            key="mobile-sidebar-drawer"
+            initial={{ x: -280 }}
+            animate={{ x: 0 }}
+            exit={{ x: -280 }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed inset-y-0 left-0 w-64 bg-onair-surface border-r border-onair-border z-50 lg:hidden"
+          >
+            <button
               onClick={onClose}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-            />
-            <motion.aside
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 w-64 bg-onair-surface border-r border-onair-border z-50 lg:hidden"
+              className="absolute top-4 right-4 p-1.5 rounded-xl text-onair-muted hover:text-onair-text hover:bg-onair-surface"
             >
-              <button
-                onClick={onClose}
-                className="absolute top-4 right-4 p-1.5 rounded-xl text-onair-muted hover:text-onair-text hover:bg-onair-surface"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              {sidebarContent}
-            </motion.aside>
-          </>
+              <X className="w-5 h-5" />
+            </button>
+            {sidebarContent}
+          </motion.aside>
         )}
       </AnimatePresence>
     </>

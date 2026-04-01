@@ -4,9 +4,11 @@ import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import { useHydrationReminder } from "@/hooks/useHydrationReminder";
 import ChangelogModal from "@/components/ChangelogModal";
+import AssistantChat from "@/components/AssistantChat";
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const location = useLocation();
   useHydrationReminder();
 
@@ -22,7 +24,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex transition-colors duration-300" style={{ background: "var(--bg)" }}>
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onOpenAssistant={() => setAssistantOpen(true)} />
 
       <div className="flex-1 flex flex-col lg:ml-64">
         <Navbar onMenuToggle={() => setSidebarOpen(true)} />
@@ -32,6 +34,7 @@ export default function Layout() {
         </main>
       </div>
       <ChangelogModal />
+      <AssistantChat externalOpen={assistantOpen} onExternalClose={() => setAssistantOpen(false)} />
     </div>
   );
 }

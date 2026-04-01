@@ -26,6 +26,7 @@ import {
   Monitor,
   Trophy,
   Medal,
+  HelpCircle,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { ShieldCheck } from "lucide-react";
@@ -36,6 +37,7 @@ import { cn } from "@/lib/utils";
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
+  onOpenAssistant?: () => void;
 }
 
 const navSections = [
@@ -83,7 +85,7 @@ const navSections = [
   },
 ];
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
+export default function Sidebar({ open, onClose, onOpenAssistant }: SidebarProps) {
   const { t } = useTranslation();
   const { logout, user } = useAuthStore();
   const isAdmin = user?.is_admin ?? false;
@@ -239,6 +241,23 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               <Download className="w-4 h-4" />
             </div>
             <span>{t("nav.installApp")}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Help / Assistant */}
+      {onOpenAssistant && (
+        <div className="px-4 pb-1">
+          <button
+            onClick={() => { onOpenAssistant(); onClose(); }}
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm
+                       text-onair-muted hover:text-onair-cyan hover:bg-onair-surface
+                       transition-all duration-200"
+          >
+            <div className="p-1.5 rounded-lg">
+              <HelpCircle className="w-4.5 h-4.5" />
+            </div>
+            <span>{t("nav.help") || "Aide"}</span>
           </button>
         </div>
       )}

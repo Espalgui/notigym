@@ -93,6 +93,9 @@ export default function Workouts() {
   const [filterDateTo, setFilterDateTo] = useState("");
   const [filterExercise, setFilterExercise] = useState("");
   const [filterMuscle, setFilterMuscle] = useState("");
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     api.get("/workouts/programs").then((r) => setPrograms(r.data)).catch(() => {});
@@ -104,17 +107,36 @@ export default function Workouts() {
     }).catch(() => {});
   }, []);
 
-  const fetchSessions = () => {
-    setLoadingSessions(true);
-    const params = new URLSearchParams({ completed_only: "true", limit: "50" });
+  const buildSessionParams = (offset = 0) => {
+    const params = new URLSearchParams({ completed_only: "true", limit: String(PAGE_SIZE), offset: String(offset) });
     if (filterDateFrom) params.set("date_from", new Date(filterDateFrom).toISOString());
     if (filterDateTo) params.set("date_to", new Date(filterDateTo + "T23:59:59").toISOString());
     if (filterExercise) params.set("exercise_id", filterExercise);
     if (filterMuscle) params.set("muscle_group", filterMuscle);
-    api.get(`/workouts/sessions?${params}`)
-      .then((r) => setSessions(r.data))
+    return params;
+  };
+
+  const fetchSessions = () => {
+    setLoadingSessions(true);
+    setHasMore(true);
+    api.get(`/workouts/sessions?${buildSessionParams(0)}`)
+      .then((r) => {
+        setSessions(r.data);
+        setHasMore(r.data.length >= PAGE_SIZE);
+      })
       .catch(() => {})
       .finally(() => setLoadingSessions(false));
+  };
+
+  const loadMore = () => {
+    setLoadingMore(true);
+    api.get(`/workouts/sessions?${buildSessionParams(sessions.length)}`)
+      .then((r) => {
+        setSessions((prev) => [...prev, ...r.data]);
+        setHasMore(r.data.length >= PAGE_SIZE);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
   };
 
   useEffect(() => {
@@ -739,6 +761,17 @@ export default function Workouts() {
                 </motion.div>
               );
             })
+          )}
+          {hasMore && sessions.length > 0 && !loadingSessions && (
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="w-full py-3 rounded-xl text-sm font-medium text-onair-cyan bg-onair-cyan/10 hover:bg-onair-cyan/20 transition-colors disabled:opacity-50"
+            >
+              {loadingMore
+                ? (lang === "fr" ? "Chargement..." : "Loading...")
+                : (lang === "fr" ? "Charger plus" : "Load more")}
+            </button>
           )}
         </div>
       )}

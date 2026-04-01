@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import { useHydrationReminder } from "@/hooks/useHydrationReminder";
@@ -7,7 +7,13 @@ import ChangelogModal from "@/components/ChangelogModal";
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
   useHydrationReminder();
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     document.body.style.overflow = sidebarOpen ? "hidden" : "";

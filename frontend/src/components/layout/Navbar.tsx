@@ -13,6 +13,9 @@ import {
   ChevronRight,
   Zap,
   Users,
+  Search,
+  ChefHat,
+  X,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import api from "@/lib/api";
@@ -52,7 +55,8 @@ function timeAgo(dateStr: string, t: (k: string, opts?: any) => string): string 
 }
 
 export default function Navbar({ onMenuToggle }: NavbarProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.startsWith("fr") ? "fr" : "en";
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -60,6 +64,47 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const [notifTab, setNotifTab] = useState<"all" | "program" | "community">("all");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{ exercises: any[]; users: any[]; recipes: any[] } | null>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Search logic
+  const handleSearch = (q: string) => {
+    setSearchQuery(q);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (!q.trim()) { setSearchResults(null); return; }
+    searchTimeout.current = setTimeout(() => {
+      api.get(`/search?q=${encodeURIComponent(q.trim())}`)
+        .then((r) => setSearchResults(r.data))
+        .catch(() => setSearchResults(null));
+    }, 300);
+  };
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+      if (e.key === "Escape") setSearchOpen(false);
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutsideSearch = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutsideSearch);
+    return () => document.removeEventListener("mousedown", handleClickOutsideSearch);
+  }, []);
 
   const fetchNotifications = () => {
     api
@@ -131,6 +176,110 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Search */}
+          <div className="relative" ref={searchRef}>
+            {searchOpen ? (
+              <div className="flex items-center gap-2">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && searchQuery.trim()) {
+                      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+                      api.get(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+                        .then((r) => setSearchResults(r.data))
+                        .catch(() => setSearchResults(null));
+                    }
+                  }}
+                  placeholder={lang === "fr" ? "Rechercher..." : "Search..."}
+                  className="w-40 sm:w-56 text-sm !py-1.5 !px-3 !rounded-xl"
+                  autoFocus
+                />
+                <button
+                  onClick={() => { setSearchOpen(false); setSearchQuery(""); setSearchResults(null); }}
+                  className="p-1.5 rounded-lg text-onair-muted hover:text-onair-text"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
+                className="p-2.5 rounded-xl text-onair-muted hover:text-onair-text hover:bg-onair-surface transition-colors"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Search Results Dropdown */}
+            {searchOpen && searchResults && (searchResults.exercises.length > 0 || searchResults.users.length > 0 || searchResults.recipes.length > 0) && (
+              <div
+                className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl overflow-hidden z-50 max-h-[400px] overflow-y-auto"
+                style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
+              >
+                {searchResults.exercises.length > 0 && (
+                  <div className="p-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-onair-muted px-2 py-1">
+                      {lang === "fr" ? "Exercices" : "Exercises"}
+                    </p>
+                    {searchResults.exercises.map((e: any) => (
+                      <button
+                        key={e.id}
+                        onClick={() => { setSearchOpen(false); setSearchQuery(""); setSearchResults(null); navigate(`/workouts?tab=history`); }}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-onair-surface/50 flex items-center gap-2.5 transition-colors"
+                      >
+                        <Dumbbell className="w-3.5 h-3.5 text-onair-red flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm truncate">{lang === "fr" ? e.name_fr : e.name_en}</p>
+                          <p className="text-[10px] text-onair-muted">{e.muscle_group}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searchResults.recipes.length > 0 && (
+                  <div className="p-2 border-t border-onair-border/50">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-onair-muted px-2 py-1">
+                      {lang === "fr" ? "Recettes" : "Recipes"}
+                    </p>
+                    {searchResults.recipes.map((r: any) => (
+                      <button
+                        key={r.id}
+                        onClick={() => { setSearchOpen(false); setSearchQuery(""); setSearchResults(null); navigate("/recipes"); }}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-onair-surface/50 flex items-center gap-2.5 transition-colors"
+                      >
+                        <ChefHat className="w-3.5 h-3.5 text-onair-cyan flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm truncate">{lang === "fr" ? r.name_fr : r.name_en}</p>
+                          <p className="text-[10px] text-onair-muted">{r.calories} kcal</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searchResults.users.length > 0 && (
+                  <div className="p-2 border-t border-onair-border/50">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-onair-muted px-2 py-1">
+                      {lang === "fr" ? "Utilisateurs" : "Users"}
+                    </p>
+                    {searchResults.users.map((u: any) => (
+                      <button
+                        key={u.id}
+                        onClick={() => { setSearchOpen(false); setSearchQuery(""); setSearchResults(null); navigate("/community"); }}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-onair-surface/50 flex items-center gap-2.5 transition-colors"
+                      >
+                        <Users className="w-3.5 h-3.5 text-onair-purple flex-shrink-0" />
+                        <p className="text-sm truncate">{u.username}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Notification Bell */}
           <div className="relative" ref={dropdownRef}>
             <button

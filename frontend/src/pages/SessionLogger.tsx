@@ -81,6 +81,9 @@ export default function SessionLogger() {
   const [sets, setSets] = useState<SetEntry[]>([]);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [editingTimer, setEditingTimer] = useState(false);
+  const [timerInputH, setTimerInputH] = useState("0");
+  const [timerInputM, setTimerInputM] = useState("0");
   const [feeling, setFeeling] = useState(3);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -421,10 +424,53 @@ export default function SessionLogger() {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-onair-cyan font-mono text-lg">
-            <Timer className="w-5 h-5" />
-            {formatDuration(elapsed)}
-          </div>
+          {editingTimer ? (
+            <div className="flex items-center gap-1 text-onair-cyan font-mono text-lg">
+              <Timer className="w-5 h-5" />
+              <input
+                type="number"
+                min="0"
+                value={timerInputH}
+                onChange={(e) => setTimerInputH(e.target.value)}
+                className="w-8 text-center bg-onair-surface rounded px-1 py-0.5 text-sm !ring-0"
+              />
+              <span className="text-xs">h</span>
+              <input
+                type="number"
+                min="0"
+                max="59"
+                value={timerInputM}
+                onChange={(e) => setTimerInputM(e.target.value)}
+                className="w-10 text-center bg-onair-surface rounded px-1 py-0.5 text-sm !ring-0"
+              />
+              <span className="text-xs">min</span>
+              <button
+                onClick={() => {
+                  const h = Math.max(0, parseInt(timerInputH) || 0);
+                  const m = Math.max(0, Math.min(59, parseInt(timerInputM) || 0));
+                  const totalMin = h * 60 + m;
+                  setElapsed(totalMin);
+                  setStartTime(new Date(Date.now() - totalMin * 60000));
+                  setEditingTimer(false);
+                }}
+                className="text-[10px] px-2 py-1 rounded-lg bg-onair-cyan/15 text-onair-cyan font-semibold"
+              >
+                OK
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setTimerInputH(String(Math.floor(elapsed / 60)));
+                setTimerInputM(String(elapsed % 60));
+                setEditingTimer(true);
+              }}
+              className="flex items-center gap-2 text-onair-cyan font-mono text-lg hover:bg-onair-surface/50 rounded-lg px-2 py-1 transition-colors"
+            >
+              <Timer className="w-5 h-5" />
+              {formatDuration(elapsed)}
+            </button>
+          )}
           <button
             onClick={() => {
               const next = !autoRestEnabled;

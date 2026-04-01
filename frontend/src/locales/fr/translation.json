@@ -100,7 +100,9 @@
       "title": "Hydratation"
     },
     "freeSession": "Séance libre",
-    "freeSessionDesc": "Commencer sans programme"
+    "freeSessionDesc": "Commencer sans programme",
+    "nextSession": "Prochaine séance",
+    "dailyMacros": "Macros du jour"
   },
   "workouts": {
     "title": "Entraînements",

@@ -6,7 +6,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart,
 } from "recharts";
 import {
-  Dumbbell, Scale, Apple, TrendingUp, Flame, Target, ChevronRight, Clock, X, Play, Star, Droplets, Plus,
+  Dumbbell, Scale, Apple, TrendingUp, Flame, Target, ChevronRight, Clock, X, Play, Star, Droplets, Plus, Zap, CalendarDays,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
@@ -44,7 +44,8 @@ const fadeInUp = {
 };
 
 export default function Dashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.startsWith("fr") ? "fr" : "en";
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { resolvedTheme } = useThemeStore();
@@ -55,6 +56,12 @@ export default function Dashboard() {
   const [expandedProgram, setExpandedProgram] = useState<string | null>(null);
   const [waterTotal, setWaterTotal] = useState(0);
   const [waterGoal, setWaterGoal] = useState(2000);
+  const [streak, setStreak] = useState(0);
+  const [nextSession, setNextSession] = useState<{ dayName: string; weekday: string; programName: string | null; date: string } | null>(null);
+  const [macros, setMacros] = useState<{
+    total_calories: number; total_protein_g: number; total_carbs_g: number; total_fat_g: number;
+    goal?: { calories: number; protein_g: number; carbs_g: number; fat_g: number } | null;
+  } | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -66,6 +73,38 @@ export default function Dashboard() {
       setWaterTotal(r.data.total_ml || 0);
       setWaterGoal(r.data.goal_ml || 2000);
     }).catch(() => {});
+    api.get("/achievements/streak").then((r) => setStreak(r.data.current_streak || 0)).catch(() => {});
+    api.get("/planning/week").then((r) => {
+      // Backend weekday: 0=Mon..6=Sun. JS getDay(): 0=Sun,1=Mon..6=Sat
+      const jsDay = new Date().getDay();
+      const todayBackend = jsDay === 0 ? 6 : jsDay - 1; // convert to 0=Mon..6=Sun
+      const slots = r.data.schedule?.filter((s: any) => !s.is_rest_day) || [];
+      const completedBackendDays = new Set(
+        (r.data.sessions || []).map((s: any) => {
+          const d = new Date(s.started_at).getDay();
+          return d === 0 ? 6 : d - 1;
+        })
+      );
+      const weekdayNames: string[] = t("planning.weekdaysFull", { returnObjects: true }) as any;
+      for (let offset = 0; offset < 7; offset++) {
+        const day = (todayBackend + offset) % 7;
+        const slot = slots.find((s: any) => s.weekday === day);
+        if (slot && !completedBackendDays.has(day)) {
+          const now = new Date();
+          const jsToday = now.getDay() === 0 ? 6 : now.getDay() - 1;
+          const targetDate = new Date(now);
+          targetDate.setDate(now.getDate() + ((day - jsToday + 7) % 7));
+          setNextSession({
+            dayName: slot.program_day_name || "",
+            weekday: weekdayNames[day],
+            programName: r.data.program_name || null,
+            date: targetDate.toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", { day: "numeric", month: "long" }),
+          });
+          break;
+        }
+      }
+    }).catch(() => {});
+    api.get(`/nutrition/summary?date=${today}`).then((r) => setMacros(r.data)).catch(() => {});
   }, []);
 
   const addWater = async (ml: number) => {
@@ -172,6 +211,14 @@ export default function Dashboard() {
       gradient: "from-onair-green/15 to-transparent",
       to: "/body",
     },
+    {
+      icon: Zap,
+      label: t("dashboard.streak"),
+      value: `${streak}j`,
+      color: "text-onair-cyan",
+      gradient: "from-onair-cyan/15 to-transparent",
+      to: "/achievements",
+    },
   ];
 
   return (
@@ -207,6 +254,33 @@ export default function Dashboard() {
           ))}
         </div>
       </motion.div>
+
+      {/* Next Session */}
+      {nextSession && (
+        <motion.div {...fadeInUp} transition={{ delay: 0.15 }}>
+          <div
+            onClick={() => navigate("/planning")}
+            className="card relative overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-onair-red/10 to-transparent pointer-events-none" />
+            <div className="relative flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-onair-red/10">
+                <CalendarDays className="w-5 h-5 text-onair-red" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-onair-muted">{t("dashboard.nextSession")}</p>
+                <p className="text-sm font-semibold text-onair-text">{nextSession.weekday} {nextSession.date}</p>
+                {(nextSession.programName || nextSession.dayName) && (
+                  <p className="text-xs text-onair-muted truncate">
+                    {[nextSession.programName, nextSession.dayName].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+              </div>
+              <ChevronRight className="w-4 h-4 text-onair-muted flex-shrink-0" />
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Stats Grid */}
       <motion.div {...fadeInUp} transition={{ delay: 0.2 }}>
@@ -299,6 +373,48 @@ export default function Dashboard() {
           </div>
         </div>
       </motion.div>
+
+      {/* Daily Macros */}
+      {macros?.goal && (
+        <motion.div {...fadeInUp} transition={{ delay: 0.27 }}>
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-display font-semibold text-onair-text">{t("dashboard.dailyMacros")}</span>
+              <button onClick={() => navigate("/nutrition")} className="btn-ghost text-xs flex items-center gap-1">
+                {t("nav.nutrition")} <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {[
+                { label: t("nutrition.protein"), current: macros.total_protein_g, goal: macros.goal.protein_g, color: "bg-onair-red" },
+                { label: t("nutrition.carbs"), current: macros.total_carbs_g, goal: macros.goal.carbs_g, color: "bg-onair-cyan" },
+                { label: t("nutrition.fat"), current: macros.total_fat_g, goal: macros.goal.fat_g, color: "bg-purple-400" },
+              ].map((m) => (
+                <div key={m.label}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-onair-muted">{m.label}</span>
+                    <span className="text-xs font-mono text-onair-text">
+                      {Math.round(m.current)}g / {Math.round(m.goal)}g
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-onair-surface overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${m.color} transition-all duration-500`}
+                      style={{ width: `${Math.min(100, Math.round((m.current / m.goal) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <div className="pt-2 border-t border-onair-border flex items-center justify-between">
+                <span className="text-xs text-onair-muted">{t("nutrition.calories")}</span>
+                <span className="text-sm font-bold text-onair-amber">
+                  {macros.total_calories} / {macros.goal.calories} kcal
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Weight Chart */}
       <motion.div {...fadeInUp} transition={{ delay: 0.3 }}>

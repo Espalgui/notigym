@@ -100,7 +100,9 @@
       "title": "Hydration"
     },
     "freeSession": "Free session",
-    "freeSessionDesc": "Start without a program"
+    "freeSessionDesc": "Start without a program",
+    "nextSession": "Next session",
+    "dailyMacros": "Daily Macros"
   },
   "workouts": {
     "title": "Workouts",

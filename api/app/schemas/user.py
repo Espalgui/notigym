@@ -26,6 +26,7 @@ class UserUpdate(BaseModel):
     privacy: Literal["public", "private"] | None = None
     language: str | None = Field(default=None, max_length=10)
     weekly_sessions_goal: int | None = Field(default=None, ge=1, le=14)
+    has_completed_onboarding: bool | None = None
 
 
 class UserResponse(BaseModel):
@@ -46,6 +47,7 @@ class UserResponse(BaseModel):
     is_admin: bool = False
     is_2fa_enabled: bool = False
     weekly_sessions_goal: int | None = None
+    has_completed_onboarding: bool = False
     created_at: datetime
     updated_at: datetime
 

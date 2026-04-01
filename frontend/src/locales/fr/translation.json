@@ -618,5 +618,38 @@
     "noRecordsHint": "Entraînez-vous et battez vos records pour les voir ici !",
     "progression": "Progression 1RM",
     "needMoreData": "Battez ce record à nouveau pour voir la progression"
+  },
+  "onboarding": {
+    "next": "Suivant",
+    "prev": "Retour",
+    "finish": "C'est parti !",
+    "step1": {
+      "title": "Bienvenue sur NotiGym !",
+      "desc": "Ton espace tout-en-un pour suivre tes entraînements, ta nutrition et ta progression corporelle. On te fait le tour !"
+    },
+    "step2": {
+      "title": "Ton Dashboard",
+      "desc": "Retrouve tes stats de la semaine, ton streak, ta prochaine séance planifiée, tes macros du jour et ton hydratation en un coup d'œil."
+    },
+    "step3": {
+      "title": "Entraînements",
+      "desc": "Crée tes programmes, importe des templates recommandés, lance des séances et suis ta progression avec la détection automatique de records."
+    },
+    "step4": {
+      "title": "Nutrition",
+      "desc": "Log tes repas, scanne des codes-barres, fixe tes objectifs macros et sauvegarde tes repas types pour les réutiliser en un clic."
+    },
+    "step5": {
+      "title": "Suivi corporel",
+      "desc": "Enregistre ton poids, tes mensurations et tes photos de progression. Compare tes photos avant/après avec le timelapse."
+    },
+    "step6": {
+      "title": "Communauté",
+      "desc": "Partage tes séances, tes records et tes recettes avec les autres membres. Like, commente et inspire-toi des autres !"
+    },
+    "step7": {
+      "title": "Personnalise ton espace",
+      "desc": "Configure ton profil, tes objectifs hebdo, le thème sombre/clair, la langue et les notifications push dans les réglages."
+    }
   }
 }

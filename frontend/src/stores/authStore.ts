@@ -17,6 +17,7 @@ interface User {
   language: string;
   is_2fa_enabled: boolean;
   is_admin: boolean;
+  has_completed_onboarding: boolean;
   created_at?: string;
 }
 

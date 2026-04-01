@@ -14,6 +14,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { formatWeight, formatDate } from "@/lib/utils";
 import { DashboardSkeleton } from "@/components/ui/Skeleton";
+import OnboardingTour from "@/components/OnboardingTour";
 
 interface Program {
   id: string;
@@ -230,10 +231,19 @@ export default function Dashboard() {
     },
   ];
 
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user && user.has_completed_onboarding === false) {
+      setShowOnboarding(true);
+    }
+  }, [loading, user]);
+
   if (loading) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      {showOnboarding && <OnboardingTour onComplete={() => setShowOnboarding(false)} />}
       {/* Header */}
       <motion.div {...fadeInUp} transition={{ delay: 0 }}>
         <div className="flex items-center justify-between">

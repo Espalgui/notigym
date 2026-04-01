@@ -618,5 +618,38 @@
     "noRecordsHint": "Train and beat your records to see them here!",
     "progression": "1RM Progression",
     "needMoreData": "Beat this record again to see progression"
+  },
+  "onboarding": {
+    "next": "Next",
+    "prev": "Back",
+    "finish": "Let's go!",
+    "step1": {
+      "title": "Welcome to NotiGym!",
+      "desc": "Your all-in-one space to track workouts, nutrition and body progress. Let us show you around!"
+    },
+    "step2": {
+      "title": "Your Dashboard",
+      "desc": "See your weekly stats, streak, next planned session, daily macros and hydration at a glance."
+    },
+    "step3": {
+      "title": "Workouts",
+      "desc": "Create programs, import recommended templates, start sessions and track your progress with automatic PR detection."
+    },
+    "step4": {
+      "title": "Nutrition",
+      "desc": "Log meals, scan barcodes, set macro goals and save meal templates to reuse them in one click."
+    },
+    "step5": {
+      "title": "Body Tracking",
+      "desc": "Record your weight, measurements and progress photos. Compare before/after with the timelapse feature."
+    },
+    "step6": {
+      "title": "Community",
+      "desc": "Share your sessions, records and recipes with other members. Like, comment and get inspired!"
+    },
+    "step7": {
+      "title": "Customize your space",
+      "desc": "Set up your profile, weekly goals, dark/light theme, language and push notifications in settings."
+    }
   }
 }

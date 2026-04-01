@@ -13,6 +13,7 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { formatWeight, formatDate } from "@/lib/utils";
+import { DashboardSkeleton } from "@/components/ui/Skeleton";
 
 interface Program {
   id: string;
@@ -49,6 +50,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { resolvedTheme } = useThemeStore();
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<WorkoutStats | null>(null);
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -68,7 +70,7 @@ export default function Dashboard() {
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
-    api.get("/workouts/stats").then((r) => setStats(r.data)).catch(() => {});
+    api.get("/workouts/stats").then((r) => setStats(r.data)).catch(() => {}).finally(() => setLoading(false));
     api.get("/body/measurements?limit=30").then((r) => setMeasurements(r.data)).catch(() => {});
     api.get("/workouts/programs").then((r) => setPrograms(r.data)).catch(() => {});
     api.get(`/nutrition/water?date=${today}`).then((r) => {
@@ -227,6 +229,8 @@ export default function Dashboard() {
       to: "/achievements",
     },
   ];
+
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">

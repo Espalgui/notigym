@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Dumbbell, Calendar, Trophy, ChevronRight, Play, Sparkles, Download, Clock, Target, ChevronDown, Flame, Star, X, Share2 } from "lucide-react";
+import { Plus, Dumbbell, Calendar, Trophy, ChevronRight, Play, Sparkles, Download, Clock, Target, ChevronDown, Flame, Star, X, Share2, Copy } from "lucide-react";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import ProgramCard from "@/components/workout/ProgramCard";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
@@ -468,9 +469,7 @@ export default function Workouts() {
       {tab === "history" && (
         <div className="space-y-3">
           {loadingSessions ? (
-            <div className="card text-center py-12">
-              <p className="text-onair-muted">{t("common.loading")}</p>
-            </div>
+            <SkeletonList count={3} />
           ) : sessions.length === 0 ? (
             <div className="card text-center py-12">
               <Calendar className="w-12 h-12 mx-auto text-onair-muted/30 mb-4" />

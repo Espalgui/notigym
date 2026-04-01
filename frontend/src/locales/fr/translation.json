@@ -102,7 +102,9 @@
     "freeSession": "Séance libre",
     "freeSessionDesc": "Commencer sans programme",
     "nextSession": "Prochaine séance",
-    "dailyMacros": "Macros du jour"
+    "dailyMacros": "Macros du jour",
+    "noPlanningTitle": "Aucune séance planifiée",
+    "noPlanningDesc": "Configure ton planning pour ne rien rater →"
   },
   "workouts": {
     "title": "Entraînements",

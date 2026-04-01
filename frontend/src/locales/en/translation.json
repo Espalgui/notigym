@@ -102,7 +102,9 @@
     "freeSession": "Free session",
     "freeSessionDesc": "Start without a program",
     "nextSession": "Next session",
-    "dailyMacros": "Daily Macros"
+    "dailyMacros": "Daily Macros",
+    "noPlanningTitle": "No sessions planned",
+    "noPlanningDesc": "Set up your planning so you never miss a workout →"
   },
   "workouts": {
     "title": "Workouts",

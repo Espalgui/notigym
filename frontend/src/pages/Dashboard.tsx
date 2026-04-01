@@ -59,6 +59,7 @@ export default function Dashboard() {
   const [customWater, setCustomWater] = useState("");
   const [streak, setStreak] = useState(0);
   const [nextSession, setNextSession] = useState<{ dayName: string; weekday: string; programName: string | null; date: string } | null>(null);
+  const [hasPlanning, setHasPlanning] = useState(true); // assume true until checked
   const [macros, setMacros] = useState<{
     total_calories: number; total_protein_g: number; total_carbs_g: number; total_fat_g: number;
     goal?: { calories: number; protein_g: number; carbs_g: number; fat_g: number } | null;
@@ -76,10 +77,15 @@ export default function Dashboard() {
     }).catch(() => {});
     api.get("/achievements/streak").then((r) => setStreak(r.data.current_streak || 0)).catch(() => {});
     api.get("/planning/week").then((r) => {
+      const allSlots = r.data.schedule || [];
+      if (allSlots.length === 0) {
+        setHasPlanning(false);
+        return;
+      }
       // Backend weekday: 0=Mon..6=Sun. JS getDay(): 0=Sun,1=Mon..6=Sat
       const jsDay = new Date().getDay();
       const todayBackend = jsDay === 0 ? 6 : jsDay - 1; // convert to 0=Mon..6=Sun
-      const slots = r.data.schedule?.filter((s: any) => !s.is_rest_day) || [];
+      const slots = allSlots.filter((s: any) => !s.is_rest_day);
       const completedBackendDays = new Set(
         (r.data.sessions || []).map((s: any) => {
           const d = new Date(s.started_at).getDay();
@@ -255,6 +261,28 @@ export default function Dashboard() {
           ))}
         </div>
       </motion.div>
+
+      {/* No Planning Alert */}
+      {!hasPlanning && (
+        <motion.div {...fadeInUp} transition={{ delay: 0.15 }}>
+          <div
+            onClick={() => navigate("/planning")}
+            className="card relative overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 border-onair-amber/30"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-onair-amber/10 to-transparent pointer-events-none" />
+            <div className="relative flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-onair-amber/10">
+                <CalendarDays className="w-5 h-5 text-onair-amber" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-onair-amber">{t("dashboard.noPlanningTitle")}</p>
+                <p className="text-xs text-onair-muted">{t("dashboard.noPlanningDesc")}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-onair-amber flex-shrink-0" />
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Next Session */}
       {nextSession && (

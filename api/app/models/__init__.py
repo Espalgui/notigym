@@ -1,4 +1,5 @@
 from app.models.activity import DailyActivity
+from app.models.meal_template import MealTemplate
 from app.models.body import BodyMeasurement, ProgressPhoto
 from app.models.community import CommunityPost, PostComment, PostLike
 from app.models.exercise import Exercise
@@ -33,4 +34,5 @@ __all__ = [
     "CommunityPost",
     "PostLike",
     "PostComment",
+    "MealTemplate",
 ]

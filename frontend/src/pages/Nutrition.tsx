@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
 } from "recharts";
-import { Apple, Plus, Droplets, Target, ChefHat, Star, Search, Loader2, ScanLine } from "lucide-react";
+import { Apple, Plus, Droplets, Target, ChefHat, Star, Search, Loader2, ScanLine, Bookmark, Trash2, PlayCircle } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { useThemeStore } from "@/stores/themeStore";
@@ -100,6 +100,55 @@ export default function Nutrition() {
     () => parseInt(localStorage.getItem("hydration_reminder_interval") || "45", 10)
   );
   const { setReminderInterval } = useHydrationReminder();
+  const [mealTemplates, setMealTemplates] = useState<any[]>([]);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [showApplyTemplate, setShowApplyTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateMealType, setTemplateMealType] = useState("lunch");
+
+  const fetchTemplates = () => {
+    api.get("/nutrition/templates").then((r) => setMealTemplates(r.data)).catch(() => {});
+  };
+
+  const saveAsTemplate = async () => {
+    if (!templateName.trim() || !summary?.entries?.length) return;
+    const entries = summary.entries.filter((e: any) => e.meal_type === templateMealType);
+    if (entries.length === 0) { toast.error(lang.startsWith("fr") ? "Aucune entrée pour ce repas" : "No entries for this meal"); return; }
+    try {
+      await api.post("/nutrition/templates", {
+        name: templateName,
+        meal_type: templateMealType,
+        items: entries.map((e: any) => ({
+          food_name: e.food_name,
+          calories: e.calories || 0,
+          protein_g: e.protein_g || 0,
+          carbs_g: e.carbs_g || 0,
+          fat_g: e.fat_g || 0,
+          quantity: e.quantity,
+          unit: e.unit,
+        })),
+      });
+      toast.success(lang.startsWith("fr") ? "Template sauvegardé !" : "Template saved!");
+      setShowSaveTemplate(false);
+      setTemplateName("");
+      fetchTemplates();
+    } catch { toast.error(t("common.error")); }
+  };
+
+  const applyTemplate = async (templateId: string) => {
+    try {
+      await api.post(`/nutrition/templates/${templateId}/apply?date=${date}`);
+      toast.success(lang.startsWith("fr") ? "Template appliqué !" : "Template applied!");
+      fetchSummary();
+    } catch { toast.error(t("common.error")); }
+  };
+
+  const deleteTemplate = async (templateId: string) => {
+    try {
+      await api.delete(`/nutrition/templates/${templateId}`);
+      setMealTemplates((prev) => prev.filter((t) => t.id !== templateId));
+    } catch { toast.error(t("common.error")); }
+  };
 
   const fetchSummary = () => {
     api.get(`/nutrition/summary?date=${date}`).then((r) => setSummary(r.data)).catch(() => {});
@@ -110,6 +159,7 @@ export default function Nutrition() {
   };
 
   useEffect(() => { fetchSummary(); fetchWater(); }, [date]);
+  useEffect(() => { fetchTemplates(); }, []);
 
   useEffect(() => {
     api.get("/recipes").then((r) => setRecipes(r.data)).catch(() => {});
@@ -274,10 +324,13 @@ export default function Nutrition() {
         <h1 className="text-2xl font-display font-bold">{t("nutrition.title")}</h1>
         <div className="flex gap-2">
           <button onClick={() => setShowGoalForm(true)} className="btn-secondary flex items-center gap-2">
-            <Target className="w-4 h-4" /> {t("nutrition.setGoals")}
+            <Target className="w-4 h-4" />
+          </button>
+          <button onClick={() => setShowApplyTemplate(true)} className="btn-secondary flex items-center gap-2">
+            <Bookmark className="w-4 h-4" /> <span>{lang.startsWith("fr") ? "Repas type" : "Meal template"}</span>
           </button>
           <button onClick={() => { setShowAddEntry(true); setPer100(null); setFoodSearch(""); setFoodResults([]); }} className="btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" /> <span>{t("nutrition.addEntry")}</span>
+            <Plus className="w-4 h-4" /> <span>{lang.startsWith("fr") ? "Aliment" : "Food"}</span>
           </button>
         </div>
       </div>
@@ -364,6 +417,144 @@ export default function Nutrition() {
           </div>
         )}
       </div>
+
+      {/* Meal Templates */}
+      <div className="card space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bookmark className="w-5 h-5 text-onair-purple" />
+            <h3 className="font-display font-semibold">
+              {lang.startsWith("fr") ? "Mes repas types" : "Meal Templates"}
+            </h3>
+          </div>
+          {summary?.entries && summary.entries.length > 0 && (
+            <button
+              onClick={() => setShowSaveTemplate(true)}
+              className="text-xs text-onair-cyan hover:underline flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" />
+              {lang.startsWith("fr") ? "Sauvegarder" : "Save"}
+            </button>
+          )}
+        </div>
+
+        {mealTemplates.length === 0 ? (
+          <p className="text-xs text-onair-muted text-center py-4">
+            {lang.startsWith("fr") ? "Aucun repas type sauvegardé" : "No saved meal templates"}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {mealTemplates.map((tpl: any) => (
+              <div key={tpl.id} className="flex items-center justify-between p-3 bg-onair-surface rounded-lg">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{tpl.name}</p>
+                  <p className="text-xs text-onair-muted">
+                    {t(`nutrition.mealTypes.${tpl.meal_type}` as any)} · {tpl.items?.length || 0} {lang.startsWith("fr") ? "aliments" : "items"}
+                    {tpl.items && ` · ${tpl.items.reduce((a: number, i: any) => a + (i.calories || 0), 0)} kcal`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => applyTemplate(tpl.id)}
+                    className="p-2 rounded-lg text-onair-cyan hover:bg-onair-cyan/10 transition-colors"
+                    title={lang.startsWith("fr") ? "Utiliser" : "Apply"}
+                  >
+                    <PlayCircle className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => deleteTemplate(tpl.id)}
+                    className="p-2 rounded-lg text-onair-muted hover:text-onair-red hover:bg-onair-red/10 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Save Template Modal */}
+      {showSaveTemplate && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="card w-full max-w-sm space-y-4">
+            <h3 className="font-display font-bold text-lg">
+              {lang.startsWith("fr") ? "Sauvegarder comme repas type" : "Save as meal template"}
+            </h3>
+            <input
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder={lang.startsWith("fr") ? "Nom du template" : "Template name"}
+              className="w-full"
+            />
+            <select
+              value={templateMealType}
+              onChange={(e) => setTemplateMealType(e.target.value)}
+              className="w-full"
+            >
+              {["breakfast", "lunch", "dinner", "snack"].map((m) => (
+                <option key={m} value={m}>{t(`nutrition.mealTypes.${m}` as any)}</option>
+              ))}
+            </select>
+            <p className="text-xs text-onair-muted">
+              {lang.startsWith("fr")
+                ? `${(summary?.entries || []).filter((e: any) => e.meal_type === templateMealType).length} entrée(s) seront sauvegardées`
+                : `${(summary?.entries || []).filter((e: any) => e.meal_type === templateMealType).length} entry(ies) will be saved`}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowSaveTemplate(false)} className="btn-secondary flex-1">{t("common.cancel")}</button>
+              <button onClick={saveAsTemplate} className="btn-primary flex-1">
+                <span>{lang.startsWith("fr") ? "Sauvegarder" : "Save"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Apply Template Modal */}
+      {showApplyTemplate && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="card w-full max-w-sm space-y-4 max-h-[70vh] flex flex-col">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-bold text-lg">
+                {lang.startsWith("fr") ? "Ajouter un repas type" : "Apply a meal template"}
+              </h3>
+              <button onClick={() => setShowApplyTemplate(false)} className="p-1.5 rounded-lg text-onair-muted hover:text-onair-text hover:bg-onair-surface">
+                <Plus className="w-5 h-5 rotate-45" />
+              </button>
+            </div>
+            {mealTemplates.length === 0 ? (
+              <div className="text-center py-8">
+                <Bookmark className="w-10 h-10 mx-auto text-onair-muted/30 mb-3" />
+                <p className="text-sm text-onair-muted">
+                  {lang.startsWith("fr") ? "Aucun repas type sauvegardé" : "No saved templates"}
+                </p>
+                <p className="text-xs text-onair-muted/60 mt-1">
+                  {lang.startsWith("fr") ? "Ajoutez des aliments puis sauvegardez-les comme repas type" : "Add foods then save them as a meal template"}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-y-auto flex-1 space-y-2">
+                {mealTemplates.map((tpl: any) => (
+                  <button
+                    key={tpl.id}
+                    onClick={async () => {
+                      await applyTemplate(tpl.id);
+                      setShowApplyTemplate(false);
+                    }}
+                    className="w-full text-left p-3 bg-onair-surface rounded-lg hover:bg-onair-surface/80 transition-colors"
+                  >
+                    <p className="text-sm font-medium">{tpl.name}</p>
+                    <p className="text-xs text-onair-muted">
+                      {t(`nutrition.mealTypes.${tpl.meal_type}` as any)} · {tpl.items?.length || 0} {lang.startsWith("fr") ? "aliments" : "items"} · {tpl.items?.reduce((a: number, i: any) => a + (i.calories || 0), 0)} kcal
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Water section */}
       <div className="card space-y-4">

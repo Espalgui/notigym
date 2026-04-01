@@ -1,3 +1,4 @@
+import json
 import uuid as uuid_mod
 from datetime import date, timedelta
 
@@ -9,11 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_active_user
 from app.database import get_db
 from app.limiter import limiter
+from app.models.meal_template import MealTemplate
 from app.models.nutrition import NutritionEntry, NutritionGoal, WaterIntake
 from app.models.user import User
 from app.schemas.nutrition import (
     DailyNutritionSummary,
     DailyWaterSummary,
+    MealTemplateCreate,
+    MealTemplateItem,
+    MealTemplateResponse,
     NutritionEntryCreate,
     NutritionEntryResponse,
     NutritionEntryUpdate,
@@ -373,3 +378,102 @@ async def get_water(
     goal_ml = (active_goal.water_goal_ml or 2000) if active_goal else 2000
 
     return DailyWaterSummary(date=date, total_ml=total, goal_ml=goal_ml, entries=entries)
+
+
+# --- Meal Templates ---
+
+@router.get("/templates", response_model=list[MealTemplateResponse])
+async def list_templates(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(MealTemplate)
+        .where(MealTemplate.user_id == current_user.id)
+        .order_by(MealTemplate.created_at.desc())
+    )
+    templates = result.scalars().all()
+    responses = []
+    for t in templates:
+        items = json.loads(t.items) if isinstance(t.items, str) else t.items
+        responses.append(MealTemplateResponse(
+            id=t.id, name=t.name, meal_type=t.meal_type,
+            items=[MealTemplateItem(**i) for i in items],
+            created_at=t.created_at,
+        ))
+    return responses
+
+
+@router.post("/templates", response_model=MealTemplateResponse, status_code=status.HTTP_201_CREATED)
+async def create_template(
+    data: MealTemplateCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    template = MealTemplate(
+        user_id=current_user.id,
+        name=data.name,
+        meal_type=data.meal_type,
+        items=json.dumps([i.model_dump() for i in data.items]),
+    )
+    db.add(template)
+    await db.flush()
+    await db.refresh(template)
+    items = json.loads(template.items)
+    return MealTemplateResponse(
+        id=template.id, name=template.name, meal_type=template.meal_type,
+        items=[MealTemplateItem(**i) for i in items],
+        created_at=template.created_at,
+    )
+
+
+@router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_template(
+    template_id: uuid_mod.UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(MealTemplate).where(MealTemplate.id == template_id, MealTemplate.user_id == current_user.id)
+    )
+    template = result.scalar_one_or_none()
+    if not template:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
+    await db.delete(template)
+    return None
+
+
+@router.post("/templates/{template_id}/apply")
+async def apply_template(
+    template_id: uuid_mod.UUID,
+    target_date: date = Query(..., alias="date"),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(MealTemplate).where(MealTemplate.id == template_id, MealTemplate.user_id == current_user.id)
+    )
+    template = result.scalar_one_or_none()
+    if not template:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
+
+    items = json.loads(template.items) if isinstance(template.items, str) else template.items
+    created = []
+    for item in items:
+        entry = NutritionEntry(
+            user_id=current_user.id,
+            date=target_date,
+            meal_type=template.meal_type,
+            food_name=item["food_name"],
+            calories=item.get("calories", 0),
+            protein_g=item.get("protein_g", 0),
+            carbs_g=item.get("carbs_g", 0),
+            fat_g=item.get("fat_g", 0),
+            quantity=item.get("quantity"),
+            unit=item.get("unit"),
+        )
+        db.add(entry)
+        created.append(entry)
+
+    await db.flush()
+    return {"applied": len(created)}

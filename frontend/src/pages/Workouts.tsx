@@ -214,13 +214,28 @@ export default function Workouts() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-bold">{t("workouts.title")}</h1>
-        <button
-          onClick={() => navigate("/workouts/new")}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{t("workouts.createProgram")}</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              if (programs.length === 0) {
+                navigate("/workouts/session");
+              } else {
+                setDayPickerProgram(programs[0]);
+              }
+            }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Play className="w-4 h-4" />
+            <span>{lang === "fr" ? "Démarrer" : "Start"}</span>
+          </button>
+          <button
+            onClick={() => navigate("/workouts/new")}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t("workouts.createProgram")}</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-2 border-b border-onair-border pb-1 overflow-x-auto">

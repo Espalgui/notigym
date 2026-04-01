@@ -103,3 +103,29 @@ class DailyWaterSummary(BaseModel):
     total_ml: int = 0
     goal_ml: int = 2000
     entries: list[WaterIntakeResponse] = []
+
+
+class MealTemplateItem(BaseModel):
+    food_name: str
+    calories: int = 0
+    protein_g: float = 0
+    carbs_g: float = 0
+    fat_g: float = 0
+    quantity: float | None = None
+    unit: str | None = None
+
+
+class MealTemplateCreate(BaseModel):
+    name: str
+    meal_type: str
+    items: list[MealTemplateItem]
+
+
+class MealTemplateResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    meal_type: str
+    items: list[MealTemplateItem] = []
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

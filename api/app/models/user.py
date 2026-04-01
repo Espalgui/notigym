@@ -63,3 +63,4 @@ class User(Base):
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     daily_activities = relationship("DailyActivity", back_populates="user", cascade="all, delete-orphan")
     timer_presets = relationship("TimerPreset", back_populates="user", cascade="all, delete-orphan")
+    meal_templates = relationship("MealTemplate", back_populates="user", cascade="all, delete-orphan")

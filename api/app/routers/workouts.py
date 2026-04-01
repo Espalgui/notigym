@@ -153,6 +153,67 @@ async def delete_program(
     return None
 
 
+@router.post("/programs/{program_id}/duplicate", response_model=WorkoutProgramResponse, status_code=status.HTTP_201_CREATED)
+async def duplicate_program(
+    program_id: uuid_mod.UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(WorkoutProgram)
+        .where(WorkoutProgram.id == program_id, WorkoutProgram.user_id == current_user.id)
+        .options(selectinload(WorkoutProgram.days).selectinload(ProgramDay.exercises))
+    )
+    program = result.scalar_one_or_none()
+    if not program:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
+
+    new_program = WorkoutProgram(
+        user_id=current_user.id,
+        name=f"{program.name} (copie)",
+        description=program.description,
+        program_type=program.program_type,
+        image_url=program.image_url,
+        is_active=False,
+        is_public=False,
+        is_favorite=False,
+    )
+    db.add(new_program)
+    await db.flush()
+
+    for day in sorted(program.days, key=lambda d: d.day_order):
+        new_day = ProgramDay(
+            program_id=new_program.id,
+            name=day.name,
+            day_order=day.day_order,
+        )
+        db.add(new_day)
+        await db.flush()
+
+        for ex in sorted(day.exercises, key=lambda e: e.exercise_order):
+            new_ex = ProgramExercise(
+                program_day_id=new_day.id,
+                exercise_id=ex.exercise_id,
+                exercise_order=ex.exercise_order,
+                sets=ex.sets,
+                reps_min=ex.reps_min,
+                reps_max=ex.reps_max,
+                rest_seconds=ex.rest_seconds,
+                tempo=ex.tempo,
+                notes=ex.notes,
+            )
+            db.add(new_ex)
+
+    await db.flush()
+
+    result = await db.execute(
+        select(WorkoutProgram)
+        .where(WorkoutProgram.id == new_program.id)
+        .options(selectinload(WorkoutProgram.days).selectinload(ProgramDay.exercises).selectinload(ProgramExercise.exercise))
+    )
+    return result.scalar_one()
+
+
 # --- Program Days ---
 
 @router.post("/programs/{program_id}/days", response_model=WorkoutProgramResponse, status_code=status.HTTP_201_CREATED)

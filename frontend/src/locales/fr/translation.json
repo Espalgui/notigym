@@ -152,6 +152,7 @@
     "favorite": "Favori",
     "addFavorite": "Ajouter aux favoris",
     "removeFavorite": "Retirer des favoris",
+    "duplicate": "Dupliquer le programme",
     "chooseDay": "Choisir un jour",
     "chooseDayDesc": "Quel jour souhaitez-vous entraîner ?",
     "session": {

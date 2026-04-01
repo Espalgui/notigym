@@ -172,6 +172,7 @@
     "favorite": "Favorite",
     "addFavorite": "Add to favorites",
     "removeFavorite": "Remove from favorites",
+    "duplicate": "Duplicate program",
     "chooseDay": "Choose a day",
     "chooseDayDesc": "Which day would you like to train?",
     "types": {

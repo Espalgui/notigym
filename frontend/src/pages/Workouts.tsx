@@ -75,12 +75,12 @@ export default function Workouts() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [importing, setImporting] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
-  const initialTab = (["programs", "favorites", "history", "records"] as const).includes(
+  const initialTab = (["programs", "favorites", "recommended", "history", "records"] as const).includes(
     searchParams.get("tab") as any
   )
-    ? (searchParams.get("tab") as "programs" | "favorites" | "history" | "records")
+    ? (searchParams.get("tab") as "programs" | "favorites" | "recommended" | "history" | "records")
     : "programs";
-  const [tab, setTab] = useState<"programs" | "favorites" | "history" | "records">(initialTab);
+  const [tab, setTab] = useState<"programs" | "favorites" | "recommended" | "history" | "records">(initialTab);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [exerciseMap, setExerciseMap] = useState<Record<string, ExerciseRef>>({});
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
@@ -135,6 +135,17 @@ export default function Workouts() {
 
   const [templateFilter, setTemplateFilter] = useState<string>("all");
 
+  const duplicateProgram = async (e: React.MouseEvent, programId: string) => {
+    e.stopPropagation();
+    try {
+      const { data } = await api.post(`/workouts/programs/${programId}/duplicate`);
+      setPrograms((prev) => [data, ...prev]);
+      toast.success(lang === "fr" ? "Programme dupliqué !" : "Program duplicated!");
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
+
   const toggleFavorite = async (e: React.MouseEvent, programId: string) => {
     e.stopPropagation();
     try {
@@ -179,7 +190,7 @@ export default function Workouts() {
       </div>
 
       <div className="flex gap-2 border-b border-onair-border pb-1 overflow-x-auto">
-        {(["programs", "favorites", "history", "records"] as const).map((key) => (
+        {(["programs", "favorites", "recommended", "history", "records"] as const).map((key) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -191,10 +202,13 @@ export default function Workouts() {
           >
             {key === "programs"  && <Dumbbell className="w-4 h-4 inline mr-2" />}
             {key === "favorites" && <Star className="w-4 h-4 inline mr-2" />}
+            {key === "recommended" && <Sparkles className="w-4 h-4 inline mr-2" />}
             {key === "history"   && <Calendar className="w-4 h-4 inline mr-2" />}
             {key === "records"   && <Trophy className="w-4 h-4 inline mr-2" />}
             {key === "favorites"
               ? (lang === "fr" ? "Favoris" : "Favorites")
+              : key === "recommended"
+                ? (lang === "fr" ? "Recommandés" : "Recommended")
               : t(`workouts.${key === "programs" ? "myPrograms" : key}`)}
           </button>
         ))}
@@ -203,189 +217,11 @@ export default function Workouts() {
       {tab === "programs" && (
         <div className="space-y-6">
 
-          {/* Programmes recommandés */}
-          {templates.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-onair-amber" />
-                  <h2 className="text-sm font-semibold text-onair-muted uppercase tracking-wider">
-                    {t("workouts.templates.title")}
-                  </h2>
-                </div>
-              </div>
-
-              {/* Filtres par catégorie */}
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { key: "all", label: lang === "fr" ? "Tous" : "All" },
-                  { key: "street_workout", label: "Street Workout" },
-                  { key: "classic", label: lang === "fr" ? "Classiques" : "Classic" },
-                ].map((f) => (
-                  <button
-                    key={f.key}
-                    onClick={() => setTemplateFilter(f.key)}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${
-                      templateFilter === f.key
-                        ? "bg-onair-cyan text-white"
-                        : "bg-onair-surface text-onair-muted hover:text-onair-text"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {templates
-                  .filter((tpl) => {
-                    if (templateFilter === "street_workout") return tpl.program_type === "street_workout";
-                    if (templateFilter === "classic") return tpl.program_type !== "street_workout";
-                    return true;
-                  })
-                  .map((tpl, i) => (
-                  <motion.div
-                    key={tpl.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(i * 0.03, 0.5) }}
-                    className="card flex flex-col gap-3 overflow-hidden"
-                  >
-                    {tpl.image_url && (
-                      <div className="relative -mx-4 -mt-4 mb-1">
-                        <img
-                          src={tpl.image_url}
-                          alt={tpl.name}
-                          className="w-full h-40 object-cover"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-onair-bg/80 to-transparent" />
-                        <div className="absolute bottom-2 left-3 right-3 flex items-center gap-2 flex-wrap">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${typeBg[tpl.program_type] || "bg-onair-surface"} ${typeColors[tpl.program_type] || "text-onair-muted"} backdrop-blur-sm`}>
-                            {t(`workouts.types.${tpl.program_type}` as any)}
-                          </span>
-                          {tpl.difficulty && (
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full backdrop-blur-sm ${difficultyColors[tpl.difficulty] || ""}`}>
-                              {tpl.difficulty === "beginner" ? (lang === "fr" ? "Débutant" : "Beginner") :
-                               tpl.difficulty === "medium" ? (lang === "fr" ? "Moyen" : "Medium") :
-                               tpl.difficulty === "hard" ? (lang === "fr" ? "Difficile" : "Hard") : tpl.difficulty}
-                            </span>
-                          )}
-                          {tpl.genders.includes("female") && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400 backdrop-blur-sm">
-                              {t("workouts.templates.female")}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        {!tpl.image_url && (
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${typeBg[tpl.program_type] || "bg-onair-surface"} ${typeColors[tpl.program_type] || "text-onair-muted"}`}>
-                              {t(`workouts.types.${tpl.program_type}` as any)}
-                            </span>
-                            {tpl.difficulty && (
-                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${difficultyColors[tpl.difficulty] || ""}`}>
-                                {tpl.difficulty === "beginner" ? (lang === "fr" ? "Débutant" : "Beginner") :
-                                 tpl.difficulty === "medium" ? (lang === "fr" ? "Moyen" : "Medium") :
-                                 tpl.difficulty === "hard" ? (lang === "fr" ? "Difficile" : "Hard") : tpl.difficulty}
-                              </span>
-                            )}
-                            {tpl.genders.includes("female") && (
-                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400">
-                                {t("workouts.templates.female")}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        <h3 className="font-semibold text-sm leading-tight">{tpl.name}</h3>
-                        <p className="text-xs text-onair-muted mt-1 line-clamp-2">{tpl.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 text-xs text-onair-muted">
-                      <span className="flex items-center gap-1">
-                        <Dumbbell className="w-3.5 h-3.5" />
-                        {tpl.exercises_count} {t("workouts.exercises")}
-                      </span>
-                      {tpl.program_type !== "street_workout" && (
-                        <>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5" />
-                            {tpl.days_per_week}j/sem
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Target className="w-3.5 h-3.5" />
-                            {tpl.days_count} {t("workouts.days")}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleImport(tpl.id)}
-                        disabled={importing === tpl.id}
-                        className="flex items-center justify-center gap-2 flex-1 py-2 rounded-xl text-xs font-semibold bg-onair-cyan/10 text-onair-cyan hover:bg-onair-cyan/20 transition-colors disabled:opacity-50"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        {importing === tpl.id ? t("common.loading") : t("workouts.templates.import")}
-                      </button>
-                      {(() => {
-                        const imported = programs.find((p) => p.name === tpl.name);
-                        const isFav = imported?.is_favorite ?? false;
-                        return (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (imported) {
-                                // Already imported — toggle favorite
-                                try {
-                                  const { data } = await api.patch(`/workouts/programs/${imported.id}/favorite`);
-                                  setPrograms((prev) =>
-                                    prev.map((p) => (p.id === imported.id ? { ...p, is_favorite: data.is_favorite } : p))
-                                  );
-                                } catch { toast.error(t("common.error")); }
-                              } else {
-                                // Import + set favorite
-                                setImporting(tpl.id);
-                                try {
-                                  const { data } = await api.post(`/workouts/templates/${tpl.id}/import`);
-                                  await api.patch(`/workouts/programs/${data.id}/favorite`);
-                                  setPrograms((prev) => [{ ...data, is_favorite: true }, ...prev]);
-                                  toast.success(lang === "fr" ? "Ajouté aux favoris !" : "Added to favorites!");
-                                } catch { toast.error(t("common.error")); }
-                                finally { setImporting(null); }
-                              }
-                            }}
-                            disabled={importing === tpl.id}
-                            className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 ${
-                              isFav
-                                ? "bg-onair-amber/20 text-onair-amber"
-                                : "bg-onair-surface text-onair-muted hover:text-onair-amber hover:bg-onair-amber/10"
-                            }`}
-                            title={lang === "fr" ? "Favori" : "Favorite"}
-                          >
-                            <Star className={`w-3.5 h-3.5 ${isFav ? "fill-current" : ""}`} />
-                          </button>
-                        );
-                      })()}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Mes programmes */}
           <div className="space-y-3">
-            {templates.length > 0 && (
-              <h2 className="text-sm font-semibold text-onair-muted uppercase tracking-wider">
-                {t("workouts.myPrograms")}
-              </h2>
-            )}
+            <h2 className="text-sm font-semibold text-onair-muted uppercase tracking-wider">
+              {t("workouts.myPrograms")}
+            </h2>
             {sortedPrograms.length === 0 ? (
               <div className="card text-center py-12">
                 <Dumbbell className="w-12 h-12 mx-auto text-onair-muted/30 mb-4" />
@@ -402,6 +238,7 @@ export default function Workouts() {
                   index={i}
                   typeColors={typeColors}
                   onToggleFavorite={toggleFavorite}
+                  onDuplicate={duplicateProgram}
                   onStartSession={(p) => setDayPickerProgram(p)}
                 />
               ))
@@ -432,10 +269,198 @@ export default function Workouts() {
                   index={i}
                   typeColors={typeColors}
                   onToggleFavorite={toggleFavorite}
+                  onDuplicate={duplicateProgram}
                   onStartSession={(p) => setDayPickerProgram(p)}
                   showChevron={false}
                 />
               ))
+          )}
+        </div>
+      )}
+
+      {tab === "recommended" && (
+        <div className="space-y-4">
+          {/* Filtres par catégorie */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "all", label: lang === "fr" ? "Tous" : "All" },
+              { key: "street_workout", label: "Street Workout" },
+              { key: "classic", label: lang === "fr" ? "Classiques" : "Classic" },
+            ].map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setTemplateFilter(f.key)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${
+                  templateFilter === f.key
+                    ? "bg-onair-cyan text-white"
+                    : "bg-onair-surface text-onair-muted hover:text-onair-text"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {templates
+              .filter((tpl) => {
+                if (templateFilter === "street_workout") return tpl.program_type === "street_workout";
+                if (templateFilter === "classic") return tpl.program_type !== "street_workout";
+                return true;
+              })
+              .map((tpl, i) => (
+              <motion.div
+                key={tpl.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(i * 0.03, 0.5) }}
+                className="card flex flex-col gap-3 overflow-hidden"
+              >
+                {tpl.image_url && (
+                  <div className="relative -mx-4 -mt-4 mb-1">
+                    <img src={tpl.image_url} alt={tpl.name} className="w-full h-40 object-cover" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-onair-bg/80 to-transparent" />
+                    <div className="absolute bottom-2 left-3 right-3 flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${typeBg[tpl.program_type] || "bg-onair-surface"} ${typeColors[tpl.program_type] || "text-onair-muted"} backdrop-blur-sm`}>
+                        {t(`workouts.types.${tpl.program_type}` as any)}
+                      </span>
+                      {tpl.difficulty && (
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full backdrop-blur-sm ${difficultyColors[tpl.difficulty] || ""}`}>
+                          {tpl.difficulty === "beginner" ? (lang === "fr" ? "Débutant" : "Beginner") :
+                           tpl.difficulty === "medium" ? (lang === "fr" ? "Moyen" : "Medium") :
+                           tpl.difficulty === "hard" ? (lang === "fr" ? "Difficile" : "Hard") : tpl.difficulty}
+                        </span>
+                      )}
+                      {tpl.genders.includes("female") && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400 backdrop-blur-sm">
+                          {t("workouts.templates.female")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    {!tpl.image_url && (
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${typeBg[tpl.program_type] || "bg-onair-surface"} ${typeColors[tpl.program_type] || "text-onair-muted"}`}>
+                          {t(`workouts.types.${tpl.program_type}` as any)}
+                        </span>
+                        {tpl.difficulty && (
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${difficultyColors[tpl.difficulty] || ""}`}>
+                            {tpl.difficulty === "beginner" ? (lang === "fr" ? "Débutant" : "Beginner") :
+                             tpl.difficulty === "medium" ? (lang === "fr" ? "Moyen" : "Medium") :
+                             tpl.difficulty === "hard" ? (lang === "fr" ? "Difficile" : "Hard") : tpl.difficulty}
+                          </span>
+                        )}
+                        {tpl.genders.includes("female") && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400">
+                            {t("workouts.templates.female")}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <h3 className="font-semibold text-sm leading-tight">{tpl.name}</h3>
+                    <p className="text-xs text-onair-muted mt-1 line-clamp-2">{tpl.description}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs text-onair-muted">
+                  <span className="flex items-center gap-1">
+                    <Dumbbell className="w-3.5 h-3.5" />
+                    {tpl.exercises_count} {t("workouts.exercises")}
+                  </span>
+                  {tpl.program_type !== "street_workout" && (
+                    <>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {tpl.days_per_week}j/sem
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Target className="w-3.5 h-3.5" />
+                        {tpl.days_count} {t("workouts.days")}
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      const existing = programs.find((p) => p.name === tpl.name);
+                      if (existing) {
+                        setDayPickerProgram(existing);
+                      } else {
+                        setImporting(tpl.id);
+                        try {
+                          const { data } = await api.post(`/workouts/templates/${tpl.id}/import`);
+                          setPrograms((prev) => [data, ...prev]);
+                          setDayPickerProgram(data);
+                        } catch { toast.error(t("common.error")); }
+                        finally { setImporting(null); }
+                      }
+                    }}
+                    disabled={importing === tpl.id}
+                    className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold bg-onair-red/10 text-onair-red hover:bg-onair-red/20 transition-colors disabled:opacity-50"
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                    {lang === "fr" ? "Lancer" : "Start"}
+                  </button>
+                  <button
+                    onClick={() => handleImport(tpl.id)}
+                    disabled={importing === tpl.id}
+                    className="flex items-center justify-center gap-2 flex-1 py-2 rounded-xl text-xs font-semibold bg-onair-cyan/10 text-onair-cyan hover:bg-onair-cyan/20 transition-colors disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    {importing === tpl.id ? t("common.loading") : t("workouts.templates.import")}
+                  </button>
+                  {(() => {
+                    const imported = programs.find((p) => p.name === tpl.name);
+                    const isFav = imported?.is_favorite ?? false;
+                    return (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (imported) {
+                            try {
+                              const { data } = await api.patch(`/workouts/programs/${imported.id}/favorite`);
+                              setPrograms((prev) =>
+                                prev.map((p) => (p.id === imported.id ? { ...p, is_favorite: data.is_favorite } : p))
+                              );
+                            } catch { toast.error(t("common.error")); }
+                          } else {
+                            setImporting(tpl.id);
+                            try {
+                              const { data } = await api.post(`/workouts/templates/${tpl.id}/import`);
+                              await api.patch(`/workouts/programs/${data.id}/favorite`);
+                              setPrograms((prev) => [{ ...data, is_favorite: true }, ...prev]);
+                              toast.success(lang === "fr" ? "Ajouté aux favoris !" : "Added to favorites!");
+                            } catch { toast.error(t("common.error")); }
+                            finally { setImporting(null); }
+                          }
+                        }}
+                        disabled={importing === tpl.id}
+                        className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 ${
+                          isFav
+                            ? "bg-onair-amber/20 text-onair-amber"
+                            : "bg-onair-surface text-onair-muted hover:text-onair-amber hover:bg-onair-amber/10"
+                        }`}
+                        title={lang === "fr" ? "Favori" : "Favorite"}
+                      >
+                        <Star className={`w-3.5 h-3.5 ${isFav ? "fill-current" : ""}`} />
+                      </button>
+                    );
+                  })()}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {templates.length === 0 && (
+            <div className="card text-center py-12">
+              <Sparkles className="w-12 h-12 mx-auto text-onair-muted/30 mb-4" />
+              <p className="text-onair-muted">{t("common.noData")}</p>
+            </div>
           )}
         </div>
       )}

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Star, Play, ChevronRight } from "lucide-react";
+import { Star, Play, ChevronRight, Copy } from "lucide-react";
 
 interface Program {
   id: string;
@@ -20,6 +20,7 @@ interface ProgramCardProps {
   typeColors: Record<string, string>;
   onToggleFavorite: (e: React.MouseEvent, id: string) => void;
   onStartSession: (program: Program) => void;
+  onDuplicate?: (e: React.MouseEvent, id: string) => void;
   showChevron?: boolean;
 }
 
@@ -29,6 +30,7 @@ export default function ProgramCard({
   typeColors,
   onToggleFavorite,
   onStartSession,
+  onDuplicate,
   showChevron = true,
 }: ProgramCardProps) {
   const { t } = useTranslation();
@@ -78,6 +80,15 @@ export default function ProgramCard({
           >
             <Star className={`w-4 h-4 ${program.is_favorite ? "fill-current" : ""}`} />
           </button>
+          {onDuplicate && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDuplicate(e, program.id); }}
+              className="p-2 rounded-lg text-onair-muted hover:text-onair-cyan hover:bg-onair-cyan/10 transition-colors"
+              title={t("workouts.duplicate")}
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); onStartSession(program); }}
             className="p-2 rounded-lg bg-onair-red/10 text-onair-red hover:bg-onair-red/20 transition-colors"

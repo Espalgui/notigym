@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChefHat, Plus, Search, Clock, Users, Flame, Trash2, ArrowLeft, X, Star } from "lucide-react";
+import { ChefHat, Plus, Search, Clock, Users, Flame, Trash2, ArrowLeft, X, Star, Share2 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import toast from "react-hot-toast";
@@ -125,6 +125,22 @@ export default function Recipes() {
       setShareForm({ name_fr: "", name_en: "", description_fr: "", description_en: "", meal_type: "lunch", calories: "", protein_g: "", carbs_g: "", fat_g: "", prep_time_min: "", cook_time_min: "", servings: "1", ingredients_fr: "", ingredients_en: "", steps_fr: "", steps_en: "", tags: "" });
       api.get("/recipes").then((r) => setRecipes(r.data)).catch(() => {});
     } catch { toast.error("Error"); }
+  };
+
+  const handleShareToFeed = async (r: Recipe) => {
+    const name = lang === "fr" ? r.name_fr : r.name_en;
+    try {
+      await api.post("/community/posts", {
+        post_type: "recipe",
+        content: lang === "fr"
+          ? `Je partage ma recette : ${name} — ${r.calories} kcal, ${r.protein_g}g protéines`
+          : `Sharing my recipe: ${name} — ${r.calories} kcal, ${r.protein_g}g protein`,
+        reference_id: r.id,
+      });
+      toast.success(lang === "fr" ? "Partagée sur le fil !" : "Shared to feed!");
+    } catch {
+      toast.error("Error");
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -264,6 +280,9 @@ export default function Recipes() {
         <div className="flex gap-3">
           <button onClick={() => handleAddToJournal(r)} className="btn-primary flex-1 flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> {lang === "fr" ? "Ajouter au journal" : "Add to journal"}
+          </button>
+          <button onClick={() => handleShareToFeed(r)} className="btn-secondary flex items-center gap-2">
+            <Share2 className="w-4 h-4" />
           </button>
           {r.created_by === (user as any)?.id && !r.is_official && (
             <button onClick={() => handleDelete(r.id)} className="btn-secondary text-onair-red flex items-center gap-2">

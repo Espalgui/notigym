@@ -266,8 +266,13 @@
       "pr": "Personal Record",
       "progress": "Progress",
       "program": "Program",
+      "recipe": "Recipe",
       "general": "General"
-    }
+    },
+    "addToJournal": "Add to journal",
+    "recipeAdded": "Recipe added to journal!",
+    "recipeFavorited": "Recipe added to favorites!",
+    "recipeUnfavorited": "Recipe removed from favorites"
   },
   "admin": {
     "title": "Administration",

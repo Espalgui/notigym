@@ -4,11 +4,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.recipe import RecipeResponse
 from app.schemas.user import UserProfile
 
 
 class PostCreate(BaseModel):
-    post_type: Literal["general", "workout", "pr", "progress"]
+    post_type: Literal["general", "workout", "pr", "progress", "recipe"]
     content: str = Field(min_length=1, max_length=5000)
     reference_id: uuid.UUID | None = None
     image_url: str | None = None
@@ -34,6 +35,7 @@ class PostResponse(BaseModel):
     updated_at: datetime
     author: UserProfile | None = None
     liked_by_me: bool = False
+    recipe: RecipeResponse | None = None
 
     model_config = {"from_attributes": True}
 

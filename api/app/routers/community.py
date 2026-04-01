@@ -11,18 +11,44 @@ from app.database import get_db
 from app.models.community import CommunityPost, PostComment, PostLike
 from app.models.notification import Notification
 from app.models.notification_mute import NotificationMute
+from app.models.recipe import Recipe
 from app.models.user import User
 from app.limiter import limiter
 from app.notifications import create_notification
 from app.schemas.community import CommentCreate, CommentResponse, PostCreate, PostResponse
+from app.schemas.recipe import RecipeResponse
 from app.schemas.user import UserProfile
 
 router = APIRouter(prefix="/community", tags=["community"])
 
 
-def _post_to_response(post: CommunityPost, current_user_id: uuid_mod.UUID) -> PostResponse:
+async def _post_to_response(
+    post: CommunityPost,
+    current_user_id: uuid_mod.UUID,
+    db: AsyncSession,
+    recipe_cache: dict | None = None,
+) -> PostResponse:
     liked = any(like.user_id == current_user_id for like in post.likes)
     author = UserProfile.model_validate(post.user) if post.user else None
+
+    recipe_data = None
+    if post.post_type == "recipe" and post.reference_id:
+        # Use cache if available (batch feed queries)
+        if recipe_cache is not None and post.reference_id in recipe_cache:
+            recipe_data = recipe_cache[post.reference_id]
+        else:
+            from sqlalchemy.orm import joinedload as jl
+            result = await db.execute(
+                select(Recipe).where(Recipe.id == post.reference_id).options(jl(Recipe.creator))
+            )
+            recipe = result.scalar_one_or_none()
+            if recipe:
+                recipe_data = RecipeResponse.model_validate(recipe)
+                if recipe.creator:
+                    recipe_data.creator_name = recipe.creator.username
+                if recipe_cache is not None:
+                    recipe_cache[post.reference_id] = recipe_data
+
     return PostResponse(
         id=post.id,
         user_id=post.user_id,
@@ -36,6 +62,7 @@ def _post_to_response(post: CommunityPost, current_user_id: uuid_mod.UUID) -> Po
         updated_at=post.updated_at,
         author=author,
         liked_by_me=liked,
+        recipe=recipe_data,
     )
 
 
@@ -54,7 +81,8 @@ async def get_feed(
         .limit(limit)
     )
     posts = result.scalars().unique().all()
-    return [_post_to_response(p, current_user.id) for p in posts]
+    recipe_cache: dict = {}
+    return [await _post_to_response(p, current_user.id, db, recipe_cache) for p in posts]
 
 
 @router.post("/posts", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
@@ -103,7 +131,7 @@ async def create_post(
         .options(selectinload(CommunityPost.user), selectinload(CommunityPost.likes))
     )
     post = result.scalar_one()
-    return _post_to_response(post, current_user.id)
+    return await _post_to_response(post, current_user.id, db)
 
 
 @router.get("/posts/{post_id}", response_model=PostResponse)
@@ -120,7 +148,7 @@ async def get_post(
     post = result.scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
-    return _post_to_response(post, current_user.id)
+    return await _post_to_response(post, current_user.id, db)
 
 
 @router.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -181,7 +209,7 @@ async def toggle_like(
         .options(selectinload(CommunityPost.user), selectinload(CommunityPost.likes))
     )
     post = result.scalar_one()
-    return _post_to_response(post, current_user.id)
+    return await _post_to_response(post, current_user.id, db)
 
 
 @router.post("/posts/{post_id}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)

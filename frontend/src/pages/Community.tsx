@@ -1,11 +1,55 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Plus, Send, Dumbbell, Trophy, TrendingUp, X, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Plus, Send, Dumbbell, Trophy, TrendingUp, X, Trash2, ExternalLink, ChefHat, Star, Clock, Flame } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { formatDateTime } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
+
+const URL_REGEX = /(https?:\/\/[^\s<]+)/g;
+
+function RichText({ text }: { text: string }) {
+  const parts = text.split(URL_REGEX);
+  return (
+    <>
+      {parts.map((part, i) =>
+        URL_REGEX.test(part) ? (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-onair-cyan hover:underline break-all"
+          >
+            {part.length > 60 ? part.slice(0, 57) + "…" : part}
+            <ExternalLink className="w-3 h-3 shrink-0" />
+          </a>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
+interface RecipeData {
+  id: string;
+  name_fr: string;
+  name_en: string;
+  description_fr?: string | null;
+  description_en?: string | null;
+  meal_type: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  prep_time_min?: number | null;
+  cook_time_min?: number | null;
+  servings?: number;
+  creator_name?: string | null;
+  tags?: string | null;
+}
 
 interface Post {
   id: string;
@@ -17,6 +61,7 @@ interface Post {
   created_at: string;
   author: { id: string; username: string; first_name: string; last_name: string; avatar_url: string | null } | null;
   liked_by_me: boolean;
+  recipe?: RecipeData | null;
 }
 
 const typeIcons: Record<string, any> = {
@@ -24,10 +69,11 @@ const typeIcons: Record<string, any> = {
   pr: Trophy,
   progress: TrendingUp,
   general: MessageCircle,
+  recipe: ChefHat,
 };
 
 export default function Community() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [showNewPost, setShowNewPost] = useState(false);
@@ -35,6 +81,8 @@ export default function Community() {
   const [commentPost, setCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState<any[]>([]);
+
+  const lang = i18n.language?.startsWith("fr") ? "fr" : "en";
 
   const fetchPosts = () => {
     api.get("/community/feed").then((r) => setPosts(r.data)).catch(() => {});
@@ -81,6 +129,33 @@ export default function Community() {
       await api.delete(`/community/posts/${postId}`);
       setPosts((prev) => prev.filter((p) => p.id !== postId));
       toast.success(t("community.deleted"));
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
+
+  const addRecipeToJournal = async (recipe: RecipeData) => {
+    const today = new Date().toISOString().split("T")[0];
+    try {
+      await api.post("/nutrition/entries", {
+        date: today,
+        meal_type: recipe.meal_type,
+        food_name: lang === "fr" ? recipe.name_fr : recipe.name_en,
+        calories: recipe.calories,
+        protein_g: recipe.protein_g,
+        carbs_g: recipe.carbs_g,
+        fat_g: recipe.fat_g,
+      });
+      toast.success(t("community.recipeAdded"));
+    } catch {
+      toast.error(t("common.error"));
+    }
+  };
+
+  const toggleRecipeFavorite = async (recipeId: string) => {
+    try {
+      const { data } = await api.post(`/recipes/${recipeId}/favorite`);
+      toast.success(data.is_favorite ? t("community.recipeFavorited") : t("community.recipeUnfavorited"));
     } catch {
       toast.error(t("common.error"));
     }
@@ -150,7 +225,68 @@ export default function Community() {
                   </div>
                 </div>
 
-                <p className="text-sm leading-relaxed mb-4">{post.content}</p>
+                <p className="text-sm leading-relaxed mb-4 whitespace-pre-wrap"><RichText text={post.content} /></p>
+
+                {/* Recipe card embed */}
+                {post.post_type === "recipe" && post.recipe && (
+                  <div className="mb-4 p-4 rounded-xl bg-onair-surface/50 border border-onair-border space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-sm">
+                          {lang === "fr" ? post.recipe.name_fr : post.recipe.name_en}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-onair-cyan/10 text-onair-cyan font-medium">
+                            {t(`nutrition.mealTypes.${post.recipe.meal_type}` as any)}
+                          </span>
+                          {post.recipe.prep_time_min != null && post.recipe.prep_time_min > 0 && (
+                            <span className="flex items-center gap-1 text-[10px] text-onair-muted">
+                              <Clock className="w-3 h-3" /> {post.recipe.prep_time_min}min
+                            </span>
+                          )}
+                          {post.recipe.cook_time_min != null && post.recipe.cook_time_min > 0 && (
+                            <span className="flex items-center gap-1 text-[10px] text-onair-muted">
+                              <Flame className="w-3 h-3" /> {post.recipe.cook_time_min}min
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <ChefHat className="w-8 h-8 text-onair-cyan/30" />
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      <div>
+                        <p className="text-sm font-bold text-onair-amber">{post.recipe.calories}</p>
+                        <p className="text-[9px] text-onair-muted">kcal</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-onair-red">{post.recipe.protein_g}g</p>
+                        <p className="text-[9px] text-onair-muted">{t("nutrition.protein")}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-onair-cyan">{post.recipe.carbs_g}g</p>
+                        <p className="text-[9px] text-onair-muted">{t("nutrition.carbs")}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-purple-400">{post.recipe.fat_g}g</p>
+                        <p className="text-[9px] text-onair-muted">{t("nutrition.fat")}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => addRecipeToJournal(post.recipe!)}
+                        className="btn-primary flex-1 !py-2 text-xs flex items-center justify-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> {t("community.addToJournal")}
+                      </button>
+                      <button
+                        onClick={() => toggleRecipeFavorite(post.recipe!.id)}
+                        className="btn-secondary !py-2 px-3"
+                      >
+                        <Star className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-4 pt-3 border-t border-onair-border">
                   <button
@@ -187,7 +323,7 @@ export default function Community() {
               </button>
             </div>
             <select value={newPost.post_type} onChange={(e) => setNewPost({ ...newPost, post_type: e.target.value })} className="w-full mb-3">
-              {["general", "workout", "pr", "progress", "program"].map((type) => (
+              {["general", "workout", "pr", "progress", "program", "recipe"].map((type) => (
                 <option key={type} value={type}>{t(`community.postTypes.${type}` as any)}</option>
               ))}
             </select>
@@ -224,7 +360,7 @@ export default function Community() {
                     <span className="text-sm font-medium">{c.author?.username || "?"}</span>
                     <span className="text-xs text-onair-muted">{formatDateTime(c.created_at)}</span>
                   </div>
-                  <p className="text-sm">{c.content}</p>
+                  <p className="text-sm whitespace-pre-wrap"><RichText text={c.content} /></p>
                 </div>
               ))}
               {comments.length === 0 && <p className="text-center text-onair-muted py-4">{t("common.noData")}</p>}

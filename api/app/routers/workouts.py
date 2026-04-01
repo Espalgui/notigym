@@ -1,7 +1,10 @@
+import csv
+import io
 import uuid as uuid_mod
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -564,6 +567,75 @@ async def list_sessions(
     query = query.offset(offset).limit(limit)
     result = await db.execute(query)
     return result.scalars().unique().all()
+
+
+@router.get("/sessions/export")
+async def export_sessions_csv(
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
+    exercise_id: uuid_mod.UUID | None = Query(None),
+    muscle_group: str | None = Query(None),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    query = (
+        select(WorkoutSession)
+        .where(WorkoutSession.user_id == current_user.id, WorkoutSession.is_completed.is_(True))
+        .options(selectinload(WorkoutSession.sets))
+        .order_by(WorkoutSession.started_at.desc())
+    )
+    if date_from:
+        query = query.where(WorkoutSession.started_at >= date_from)
+    if date_to:
+        query = query.where(WorkoutSession.started_at <= date_to)
+    if exercise_id:
+        query = query.where(
+            WorkoutSession.id.in_(
+                select(SessionSet.session_id).where(SessionSet.exercise_id == exercise_id)
+            )
+        )
+    if muscle_group:
+        query = query.where(
+            WorkoutSession.id.in_(
+                select(SessionSet.session_id)
+                .join(Exercise, SessionSet.exercise_id == Exercise.id)
+                .where(Exercise.muscle_group == muscle_group)
+            )
+        )
+    result = await db.execute(query)
+    sessions = result.scalars().unique().all()
+
+    # Build exercise name lookup
+    ex_ids = {s.exercise_id for sess in sessions for s in sess.sets}
+    ex_result = await db.execute(select(Exercise).where(Exercise.id.in_(ex_ids))) if ex_ids else None
+    ex_map = {e.id: e for e in ex_result.scalars().all()} if ex_result else {}
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["date", "exercise", "muscle_group", "set", "weight_kg", "reps", "duration_s", "rpe", "warmup", "pr"])
+    for sess in sessions:
+        date_str = sess.started_at.strftime("%Y-%m-%d %H:%M")
+        for s in sorted(sess.sets, key=lambda x: (x.exercise_id, x.set_number)):
+            ex = ex_map.get(s.exercise_id)
+            writer.writerow([
+                date_str,
+                ex.name_en if ex else str(s.exercise_id),
+                ex.muscle_group if ex else "",
+                s.set_number,
+                s.weight_kg or "",
+                s.reps or "",
+                s.duration_seconds or "",
+                s.rpe or "",
+                "yes" if s.is_warmup else "",
+                "yes" if s.is_pr else "",
+            ])
+
+    output.seek(0)
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=notigym-sessions.csv"},
+    )
 
 
 @router.get("/sessions/{session_id}", response_model=WorkoutSessionResponse)

@@ -479,6 +479,32 @@ export default function Workouts() {
 
       {tab === "history" && (
         <div className="space-y-3">
+          {/* Export CSV */}
+          <div className="flex justify-end">
+            <button
+              onClick={async () => {
+                const params = new URLSearchParams();
+                if (filterDateFrom) params.set("date_from", new Date(filterDateFrom).toISOString());
+                if (filterDateTo) params.set("date_to", new Date(filterDateTo + "T23:59:59").toISOString());
+                if (filterExercise) params.set("exercise_id", filterExercise);
+                if (filterMuscle) params.set("muscle_group", filterMuscle);
+                try {
+                  const res = await api.get(`/workouts/sessions/export?${params}`, { responseType: "blob" });
+                  const url = URL.createObjectURL(res.data);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "notigym-sessions.csv";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                } catch { toast.error(t("common.error")); }
+              }}
+              className="flex items-center gap-1.5 text-xs text-onair-cyan hover:underline"
+            >
+              <Download className="w-3.5 h-3.5" />
+              {lang === "fr" ? "Exporter CSV" : "Export CSV"}
+            </button>
+          </div>
+
           {/* Filters */}
           <div className="card !py-3 space-y-3">
             <div className="grid grid-cols-2 gap-2">

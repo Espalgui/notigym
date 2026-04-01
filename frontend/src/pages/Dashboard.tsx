@@ -56,6 +56,7 @@ export default function Dashboard() {
   const [expandedProgram, setExpandedProgram] = useState<string | null>(null);
   const [waterTotal, setWaterTotal] = useState(0);
   const [waterGoal, setWaterGoal] = useState(2000);
+  const [customWater, setCustomWater] = useState("");
   const [streak, setStreak] = useState(0);
   const [nextSession, setNextSession] = useState<{ dayName: string; weekday: string; programName: string | null; date: string } | null>(null);
   const [macros, setMacros] = useState<{
@@ -368,6 +369,25 @@ export default function Dashboard() {
                     {ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`}
                   </button>
                 ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={customWater}
+                  onChange={(e) => setCustomWater(e.target.value)}
+                  placeholder="ml"
+                  className="flex-1 text-xs text-center !py-2 !px-2 !ring-0"
+                />
+                <button
+                  onClick={() => {
+                    const ml = parseInt(customWater);
+                    if (ml > 0) { addWater(ml); setCustomWater(""); }
+                  }}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold bg-onair-cyan/10 text-onair-cyan hover:bg-onair-cyan/20 active:scale-95 transition-all"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
               </div>
             </div>
           </div>

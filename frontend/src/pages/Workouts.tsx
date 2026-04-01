@@ -89,6 +89,10 @@ export default function Workouts() {
   const [dayPickerProgram, setDayPickerProgram] = useState<Program | null>(null);
   const [exportSummary, setExportSummary] = useState<any>(null);
   const [compareIds, setCompareIds] = useState<[string, string] | null>(null);
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [filterExercise, setFilterExercise] = useState("");
+  const [filterMuscle, setFilterMuscle] = useState("");
 
   useEffect(() => {
     api.get("/workouts/programs").then((r) => setPrograms(r.data)).catch(() => {});
@@ -100,15 +104,22 @@ export default function Workouts() {
     }).catch(() => {});
   }, []);
 
+  const fetchSessions = () => {
+    setLoadingSessions(true);
+    const params = new URLSearchParams({ completed_only: "true", limit: "50" });
+    if (filterDateFrom) params.set("date_from", new Date(filterDateFrom).toISOString());
+    if (filterDateTo) params.set("date_to", new Date(filterDateTo + "T23:59:59").toISOString());
+    if (filterExercise) params.set("exercise_id", filterExercise);
+    if (filterMuscle) params.set("muscle_group", filterMuscle);
+    api.get(`/workouts/sessions?${params}`)
+      .then((r) => setSessions(r.data))
+      .catch(() => {})
+      .finally(() => setLoadingSessions(false));
+  };
+
   useEffect(() => {
-    if (tab === "history" && sessions.length === 0) {
-      setLoadingSessions(true);
-      api.get("/workouts/sessions?completed_only=true&limit=50")
-        .then((r) => setSessions(r.data))
-        .catch(() => {})
-        .finally(() => setLoadingSessions(false));
-    }
-  }, [tab]);
+    if (tab === "history") fetchSessions();
+  }, [tab, filterDateFrom, filterDateTo, filterExercise, filterMuscle]);
 
   const typeColors: Record<string, string> = {
     push_pull_legs:  "text-onair-red",
@@ -468,6 +479,65 @@ export default function Workouts() {
 
       {tab === "history" && (
         <div className="space-y-3">
+          {/* Filters */}
+          <div className="card !py-3 space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="text-xs !py-2"
+                placeholder={lang === "fr" ? "Du" : "From"}
+              />
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="text-xs !py-2"
+                placeholder={lang === "fr" ? "Au" : "To"}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={filterMuscle}
+                onChange={(e) => setFilterMuscle(e.target.value)}
+                className="text-xs !py-2"
+              >
+                <option value="">{lang === "fr" ? "Groupe musculaire" : "Muscle group"}</option>
+                {["chest","back","shoulders","quads","hamstrings","glutes","biceps","triceps","abs","calves","full_body"].map((mg) => (
+                  <option key={mg} value={mg}>
+                    {lang === "fr"
+                      ? { chest:"Pectoraux", back:"Dos", shoulders:"Épaules", quads:"Quadriceps", hamstrings:"Ischio", glutes:"Fessiers", biceps:"Biceps", triceps:"Triceps", abs:"Abdos", calves:"Mollets", full_body:"Full body" }[mg]
+                      : mg.charAt(0).toUpperCase() + mg.slice(1).replace("_", " ")}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterExercise}
+                onChange={(e) => setFilterExercise(e.target.value)}
+                className="text-xs !py-2"
+              >
+                <option value="">{lang === "fr" ? "Exercice" : "Exercise"}</option>
+                {Object.values(exerciseMap)
+                  .sort((a, b) => (lang === "fr" ? a.name_fr : a.name_en).localeCompare(lang === "fr" ? b.name_fr : b.name_en))
+                  .filter((e) => !filterMuscle || e.muscle_group === filterMuscle)
+                  .map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {lang === "fr" ? e.name_fr : e.name_en}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            {(filterDateFrom || filterDateTo || filterExercise || filterMuscle) && (
+              <button
+                onClick={() => { setFilterDateFrom(""); setFilterDateTo(""); setFilterExercise(""); setFilterMuscle(""); }}
+                className="text-xs text-onair-red hover:underline"
+              >
+                {lang === "fr" ? "Effacer les filtres" : "Clear filters"}
+              </button>
+            )}
+          </div>
+
           {loadingSessions ? (
             <SkeletonList count={3} />
           ) : sessions.length === 0 ? (

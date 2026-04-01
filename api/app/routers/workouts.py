@@ -527,6 +527,8 @@ async def compare_sessions(
 async def list_sessions(
     date_from: datetime | None = Query(None),
     date_to: datetime | None = Query(None),
+    exercise_id: uuid_mod.UUID | None = Query(None),
+    muscle_group: str | None = Query(None),
     completed_only: bool = Query(True),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -545,6 +547,20 @@ async def list_sessions(
         query = query.where(WorkoutSession.started_at >= date_from)
     if date_to:
         query = query.where(WorkoutSession.started_at <= date_to)
+    if exercise_id:
+        query = query.where(
+            WorkoutSession.id.in_(
+                select(SessionSet.session_id).where(SessionSet.exercise_id == exercise_id)
+            )
+        )
+    if muscle_group:
+        query = query.where(
+            WorkoutSession.id.in_(
+                select(SessionSet.session_id)
+                .join(Exercise, SessionSet.exercise_id == Exercise.id)
+                .where(Exercise.muscle_group == muscle_group)
+            )
+        )
     query = query.offset(offset).limit(limit)
     result = await db.execute(query)
     return result.scalars().unique().all()

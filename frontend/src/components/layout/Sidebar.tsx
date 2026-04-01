@@ -321,37 +321,30 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         {sidebarContent}
       </aside>
 
-      {/* Mobile sidebar */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            key="mobile-sidebar-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          />
+      {/* Mobile backdrop */}
+      <div
+        onClick={onClose}
+        className={cn(
+          "fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300",
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
-        {open && (
-          <motion.aside
-            key="mobile-sidebar-drawer"
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            exit={{ x: -280 }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed inset-y-0 left-0 w-64 bg-onair-surface border-r border-onair-border z-50 lg:hidden"
-          >
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-1.5 rounded-xl text-onair-muted hover:text-onair-text hover:bg-onair-surface"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            {sidebarContent}
-          </motion.aside>
+      />
+
+      {/* Mobile drawer */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 w-64 bg-onair-surface border-r border-onair-border z-50 lg:hidden transition-transform duration-300 ease-in-out",
+          open ? "translate-x-0" : "-translate-x-full"
         )}
-      </AnimatePresence>
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-xl text-onair-muted hover:text-onair-text hover:bg-onair-surface"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        {sidebarContent}
+      </aside>
     </>
   );
 }
